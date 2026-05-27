@@ -1,6 +1,7 @@
 import bcrypt from 'bcryptjs';
 import { prisma } from '../index.js';
 import { signToken } from '../utils/jwt.js';
+import { checkDailyBonus } from './credits.js';
 
 // In-memory verification code store (use Redis in production)
 const codeStore = new Map<string, { code: string; expiresAt: number }>();
@@ -64,6 +65,9 @@ export async function verifyCode(email: string, code: string) {
 
   const token = signToken(user.id);
 
+  // Check daily bonus
+  const bonus = await checkDailyBonus(user.id);
+
   return {
     token,
     user: {
@@ -71,6 +75,8 @@ export async function verifyCode(email: string, code: string) {
       email: user.email,
       nickname: user.nickname,
       avatar: user.avatar,
+      credits: bonus.credits,
+      plan: user.plan,
     },
   };
 }
@@ -90,6 +96,9 @@ export async function loginWithPassword(email: string, password: string) {
 
   const token = signToken(user.id);
 
+  // Check daily bonus
+  const bonus = await checkDailyBonus(user.id);
+
   return {
     token,
     user: {
@@ -97,6 +106,8 @@ export async function loginWithPassword(email: string, password: string) {
       email: user.email,
       nickname: user.nickname,
       avatar: user.avatar,
+      credits: bonus.credits,
+      plan: user.plan,
     },
   };
 }
@@ -127,6 +138,8 @@ export async function register(email: string, password: string, nickname?: strin
       email: user.email,
       nickname: user.nickname,
       avatar: user.avatar,
+      credits: user.credits,
+      plan: user.plan,
     },
   };
 }
@@ -146,6 +159,8 @@ export async function getCurrentUser(userId: string) {
     email: user.email,
     nickname: user.nickname,
     avatar: user.avatar,
+    credits: user.credits,
+    plan: user.plan,
     createdAt: user.createdAt,
     profile: user.profile,
   };

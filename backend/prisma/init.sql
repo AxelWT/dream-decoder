@@ -71,6 +71,23 @@ CREATE TABLE "Message" (
     CONSTRAINT "Message_pkey" PRIMARY KEY ("id")
 );
 
+-- CreateTable
+CREATE TABLE "DreamCard" (
+    "id" TEXT NOT NULL,
+    "userId" TEXT NOT NULL,
+    "dreamId" TEXT NOT NULL,
+    "style" TEXT NOT NULL,
+    "title" TEXT,
+    "symbols" TEXT[],
+    "theme" TEXT,
+    "quote" TEXT,
+    "school" TEXT,
+    "emotions" TEXT[],
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "DreamCard_pkey" PRIMARY KEY ("id")
+);
+
 -- CreateIndex
 CREATE UNIQUE INDEX "User_email_key" ON "User"("email");
 
@@ -86,6 +103,9 @@ CREATE INDEX "ChatSession_userId_createdAt_idx" ON "ChatSession"("userId", "crea
 -- CreateIndex
 CREATE INDEX "Message_sessionId_createdAt_idx" ON "Message"("sessionId", "createdAt");
 
+-- CreateIndex
+CREATE INDEX "DreamCard_userId_createdAt_idx" ON "DreamCard"("userId", "createdAt");
+
 -- AddForeignKey
 ALTER TABLE "Profile" ADD CONSTRAINT "Profile_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
@@ -100,4 +120,10 @@ ALTER TABLE "ChatSession" ADD CONSTRAINT "ChatSession_dreamId_fkey" FOREIGN KEY 
 
 -- AddForeignKey
 ALTER TABLE "Message" ADD CONSTRAINT "Message_sessionId_fkey" FOREIGN KEY ("sessionId") REFERENCES "ChatSession"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "DreamCard" ADD CONSTRAINT "DreamCard_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "DreamCard" ADD CONSTRAINT "DreamCard_dreamId_fkey" FOREIGN KEY ("dreamId") REFERENCES "Dream"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 

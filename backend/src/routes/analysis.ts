@@ -2,6 +2,8 @@ import { Router, Response } from 'express';
 import { prisma } from '../index.js';
 import { chatSchema } from '../utils/validator.js';
 import { authMiddleware, AuthRequest } from '../middleware/auth.js';
+import { creditsMiddleware } from '../middleware/credits.js';
+import { consumeCredit } from '../services/credits.js';
 import { streamChat } from '../services/deepseek.js';
 
 const router = Router();
@@ -10,9 +12,12 @@ const router = Router();
 router.use(authMiddleware);
 
 // POST /api/analysis/chat - Streaming AI chat
-router.post('/chat', async (req: AuthRequest, res: Response) => {
+router.post('/chat', creditsMiddleware, async (req: AuthRequest, res: Response) => {
   try {
     const data = chatSchema.parse(req.body);
+
+    // Consume credit before streaming
+    const { remaining, plan } = await consumeCredit(req.userId!);
 
     res.setHeader('Content-Type', 'text/event-stream');
     res.setHeader('Cache-Control', 'no-cache');
@@ -31,6 +36,8 @@ router.post('/chat', async (req: AuthRequest, res: Response) => {
       res.write(`data: ${JSON.stringify({ content: chunk })}\n\n`);
     }
 
+    // Send remaining credits info before done signal
+    res.write(`data: ${JSON.stringify({ credits: remaining, plan })}\n\n`);
     res.write('data: [DONE]\n\n');
     res.end();
   } catch (err: any) {

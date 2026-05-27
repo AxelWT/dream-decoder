@@ -1,17 +1,22 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { Card } from '../UI/Card';
 import { Button } from '../UI/Button';
 import { Tag } from '../UI/Tag';
+import { CardGenerator } from '../VisualCard/CardGenerator';
+import { DreamCardVisual } from '../VisualCard/DreamCardVisual';
 import { useDreamStore } from '../../stores/dreamStore';
 import { CLARITY_LABELS, DREAM_TYPE_LABELS } from '../../types';
+import type { DreamCard } from '../../services/cards';
 
 export function DreamDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { currentDream, fetchDream, removeDream, clearCurrent, isLoading } = useDreamStore();
   const [deleting, setDeleting] = useState(false);
+  const [showCardGenerator, setShowCardGenerator] = useState(false);
+  const [generatedCard, setGeneratedCard] = useState<DreamCard | null>(null);
 
   useEffect(() => {
     if (id) fetchDream(id);
@@ -115,6 +120,82 @@ export function DreamDetail() {
             </div>
           )}
         </Card>
+      </motion.div>
+
+      {/* Visual Card Section */}
+      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }}>
+        <div className="flex items-center justify-between mb-3">
+          <h2 className="text-lg font-semibold text-white">梦境卡片</h2>
+          {!showCardGenerator && !generatedCard && (
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={() => setShowCardGenerator(true)}
+            >
+              生成卡片
+            </Button>
+          )}
+        </div>
+
+        <AnimatePresence mode="wait">
+          {showCardGenerator && !generatedCard && (
+            <motion.div
+              key="generator"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+            >
+              <Card>
+                <CardGenerator
+                  dreamId={dream.id}
+                  onGenerated={(card) => {
+                    setGeneratedCard(card);
+                    setShowCardGenerator(false);
+                  }}
+                />
+                <div className="mt-3">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setShowCardGenerator(false)}
+                  >
+                    取消
+                  </Button>
+                </div>
+              </Card>
+            </motion.div>
+          )}
+
+          {generatedCard && (
+            <motion.div
+              key="card"
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+            >
+              <DreamCardVisual card={generatedCard} />
+              <div className="flex gap-2 mt-3">
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  onClick={() => navigate('/gallery')}
+                >
+                  查看画廊
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => {
+                    setGeneratedCard(null);
+                    setShowCardGenerator(true);
+                  }}
+                >
+                  重新生成
+                </Button>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </motion.div>
 
       {/* Chat sessions */}

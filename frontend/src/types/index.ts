@@ -4,8 +4,21 @@ export interface User {
   email: string;
   nickname: string | null;
   avatar: string | null;
+  credits: number;
+  plan: string;
   createdAt?: string;
   profile?: Profile | null;
+}
+
+// Plan types
+export interface Plan {
+  id: string;
+  name: string;
+  price: number;
+  currency: string;
+  interval: string;
+  priceId?: string;
+  features: string[];
 }
 
 export interface Profile {

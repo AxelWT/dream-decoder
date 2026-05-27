@@ -8,15 +8,20 @@ datasource db {
 }
 
 model User {
-  id           String         @id @default(cuid())
-  email        String         @unique
-  passwordHash String?
-  nickname     String?
-  avatar       String?
-  createdAt    DateTime       @default(now())
-  profile      Profile?
-  dreams       Dream[]
-  chatSessions ChatSession[]
+  id              String         @id @default(cuid())
+  email           String         @unique
+  passwordHash    String?
+  nickname        String?
+  avatar          String?
+  credits         Int            @default(10)
+  plan            String         @default("FREE")
+  lastDailyBonus  DateTime?
+  createdAt       DateTime       @default(now())
+  profile         Profile?
+  subscription    Subscription?
+  dreams          Dream[]
+  chatSessions    ChatSession[]
+  cards           DreamCard[]
 }
 
 model Profile {
@@ -51,6 +56,7 @@ model Dream {
   createdAt    DateTime      @default(now())
   user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
   sessions     ChatSession[]
+  cards        DreamCard[]
 
   @@index([userId, recordedAt])
 }
@@ -79,4 +85,35 @@ model Message {
   session   ChatSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
 
   @@index([sessionId, createdAt])
+}
+
+model DreamCard {
+  id           String   @id @default(cuid())
+  userId       String
+  dreamId      String
+  style        String   // "mystic", "watercolor", "minimal", "surreal"
+  title        String?
+  symbols      String[]
+  theme        String?
+  quote        String?
+  school       String?
+  emotions     String[]
+  createdAt    DateTime @default(now())
+
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  dream        Dream    @relation(fields: [dreamId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
+}
+
+model Subscription {
+  id               String    @id @default(cuid())
+  userId           String    @unique
+  stripeCustomerId String    @unique
+  stripeSubId      String?   @unique
+  plan             String    // PRO | PREMIUM
+  status           String    // active | canceled | past_due
+  currentPeriodEnd DateTime?
+  createdAt        DateTime  @default(now())
+  user             User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
