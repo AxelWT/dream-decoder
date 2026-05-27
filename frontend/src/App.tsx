@@ -5,6 +5,7 @@ import { Login } from './pages/Login';
 import { Record } from './pages/Record';
 import { Analyze } from './pages/Analyze';
 import { Timeline } from './pages/Timeline';
+import { Profile } from './pages/Profile';
 import { DreamDetail } from './components/Dream/DreamDetail';
 
 export default function App() {
@@ -18,6 +19,7 @@ export default function App() {
           <Route path="/analyze" element={<Analyze />} />
           <Route path="/analyze/:sessionId" element={<Analyze />} />
           <Route path="/timeline" element={<Timeline />} />
+          <Route path="/profile" element={<Profile />} />
           <Route path="/dream/:id" element={<DreamDetail />} />
         </Route>
         <Route path="*" element={<Navigate to="/" replace />} />

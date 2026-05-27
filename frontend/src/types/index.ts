@@ -16,8 +16,58 @@ export interface Profile {
   occupation: string | null;
   stressLevel: number | null;
   concerns: string[];
+  lifeChanges: string[];
+  mbti: string | null;
+  dreamFrequency: string | null;
+  lucidDreamExp: boolean;
+  psychKnowledge: string | null;
   preferredSchool: string | null;
 }
+
+export interface ProfileStats {
+  totalDreams: number;
+  monthlyDreams: number;
+  topEmotions: { emotion: string; count: number }[];
+}
+
+export const AGE_RANGE_OPTIONS = [
+  '18岁以下', '18-24', '25-34', '35-44', '45-54', '55-64', '65岁以上',
+];
+
+export const GENDER_OPTIONS = [
+  '男', '女', '非二元', '不愿透露',
+];
+
+export const MBTI_OPTIONS = [
+  'INTJ', 'INTP', 'ENTJ', 'ENTP',
+  'INFJ', 'INFP', 'ENFJ', 'ENFP',
+  'ISTJ', 'ISFJ', 'ESTJ', 'ESFJ',
+  'ISTP', 'ISFP', 'ESTP', 'ESFP',
+];
+
+export const DREAM_FREQUENCY_OPTIONS: { value: string; label: string }[] = [
+  { value: 'daily', label: '每天' },
+  { value: 'weekly', label: '每周几次' },
+  { value: 'monthly', label: '每月几次' },
+  { value: 'rare', label: '很少记起' },
+];
+
+export const PSYCH_KNOWLEDGE_OPTIONS: { value: string; label: string }[] = [
+  { value: 'none', label: '完全不了解' },
+  { value: 'basic', label: '略有耳闻' },
+  { value: 'intermediate', label: '有一定了解' },
+  { value: 'advanced', label: '较为熟悉' },
+];
+
+export const CONCERN_OPTIONS = [
+  '工作压力', '人际关系', '情感关系', '家庭问题', '学业压力',
+  '健康问题', '经济压力', '自我认同', '未来迷茫', '睡眠质量',
+];
+
+export const LIFE_CHANGE_OPTIONS = [
+  '换工作', '搬家', '恋爱/结婚', '分手/离婚', '亲人离世',
+  '升学', '创业', '退休', '生育', '健康变化',
+];
 
 // Dream types
 export type Clarity = 'blurry' | 'normal' | 'clear' | 'vivid';

@@ -27,6 +27,11 @@ model Profile {
   occupation      String?
   stressLevel     Int?
   concerns        String[]
+  lifeChanges     String[]
+  mbti            String?
+  dreamFrequency  String?
+  lucidDreamExp   Boolean  @default(false)
+  psychKnowledge  String?
   preferredSchool String?
   user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }

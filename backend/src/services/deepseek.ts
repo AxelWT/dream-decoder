@@ -95,7 +95,29 @@ export async function* streamChat(params: {
     }
   }
 
-  const systemPrompt = SCHOOL_PROMPTS[school] + dreamContext;
+  // Get user profile context
+  let profileContext = '';
+  const profile = await prisma.profile.findUnique({
+    where: { userId },
+  });
+  if (profile) {
+    const parts: string[] = [];
+    if (profile.ageRange) parts.push(`年龄段: ${profile.ageRange}`);
+    if (profile.gender) parts.push(`性别: ${profile.gender}`);
+    if (profile.occupation) parts.push(`职业: ${profile.occupation}`);
+    if (profile.stressLevel) parts.push(`压力水平: ${profile.stressLevel}/10`);
+    if (profile.concerns.length) parts.push(`主要困扰: ${profile.concerns.join(', ')}`);
+    if (profile.lifeChanges.length) parts.push(`正在经历的变化: ${profile.lifeChanges.join(', ')}`);
+    if (profile.mbti) parts.push(`MBTI: ${profile.mbti}`);
+    if (profile.dreamFrequency) parts.push(`记梦频率: ${profile.dreamFrequency}`);
+    if (profile.lucidDreamExp) parts.push('有清醒梦经验');
+    if (profile.psychKnowledge) parts.push(`心理学了解程度: ${profile.psychKnowledge}`);
+    if (parts.length) {
+      profileContext = `\n\n[做梦者背景]\n${parts.join('\n')}`;
+    }
+  }
+
+  const systemPrompt = SCHOOL_PROMPTS[school] + profileContext + dreamContext;
 
   // Save user message
   await prisma.message.create({

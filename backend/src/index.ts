@@ -7,6 +7,7 @@ import { PrismaClient } from '@prisma/client';
 import authRoutes from './routes/auth.js';
 import dreamRoutes from './routes/dreams.js';
 import analysisRoutes from './routes/analysis.js';
+import profileRoutes from './routes/profile.js';
 import { errorHandler } from './middleware/errorHandler.js';
 
 export const prisma = new PrismaClient();
@@ -21,6 +22,7 @@ app.use(express.json({ limit: '10mb' }));
 app.use('/api/auth', authRoutes);
 app.use('/api/dreams', dreamRoutes);
 app.use('/api/analysis', analysisRoutes);
+app.use('/api/profile', profileRoutes);
 
 // Health check
 app.get('/api/health', (_req, res) => {

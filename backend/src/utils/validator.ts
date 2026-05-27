@@ -23,6 +23,20 @@ export const dreamSchema = z.object({
   recordedAt: z.string().datetime().optional(),
 });
 
+export const profileSchema = z.object({
+  ageRange: z.string().optional(),
+  gender: z.string().optional(),
+  occupation: z.string().optional(),
+  stressLevel: z.number().min(1).max(10).optional(),
+  concerns: z.array(z.string()).optional(),
+  lifeChanges: z.array(z.string()).optional(),
+  mbti: z.string().optional(),
+  dreamFrequency: z.string().optional(),
+  lucidDreamExp: z.boolean().optional(),
+  psychKnowledge: z.string().optional(),
+  preferredSchool: z.string().optional(),
+});
+
 export const chatSchema = z.object({
   dreamId: z.string().optional(),
   sessionId: z.string().optional(),
