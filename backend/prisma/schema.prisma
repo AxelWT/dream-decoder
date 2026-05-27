@@ -1,0 +1,77 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String         @id @default(cuid())
+  email        String         @unique
+  passwordHash String?
+  nickname     String?
+  avatar       String?
+  createdAt    DateTime       @default(now())
+  profile      Profile?
+  dreams       Dream[]
+  chatSessions ChatSession[]
+}
+
+model Profile {
+  id              String   @id @default(cuid())
+  userId          String   @unique
+  ageRange        String?
+  gender          String?
+  occupation      String?
+  stressLevel     Int?
+  concerns        String[]
+  preferredSchool String?
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Dream {
+  id           String        @id @default(cuid())
+  userId       String
+  title        String?
+  content      String
+  emotions     String[]
+  clarity      String?
+  dreamType    String?
+  scenes       String[]
+  aiSummary    String?
+  anxietyScore Float?
+  recordedAt   DateTime      @default(now())
+  createdAt    DateTime      @default(now())
+  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  sessions     ChatSession[]
+
+  @@index([userId, recordedAt])
+}
+
+model ChatSession {
+  id        String    @id @default(cuid())
+  userId    String
+  dreamId   String?
+  school    String
+  title     String?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  dream     Dream?    @relation(fields: [dreamId], references: [id], onDelete: SetNull)
+  messages  Message[]
+
+  @@index([userId, createdAt])
+}
+
+model Message {
+  id        String      @id @default(cuid())
+  sessionId String
+  role      String
+  content   String
+  createdAt DateTime    @default(now())
+  session   ChatSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  @@index([sessionId, createdAt])
+}
