@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
 import { Card } from '../components/UI/Card';
 import { AnxietyCurve } from '../components/Analytics/AnxietyCurve';
@@ -21,6 +21,20 @@ export function Insights() {
   const [anxiety, setAnxiety] = useState<AnxietyCurveResponse | null>(null);
   const [themes, setThemes] = useState<ThemeCloudResponse | null>(null);
   const [loading, setLoading] = useState(true);
+  const [showInfo, setShowInfo] = useState(false);
+  const infoRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (infoRef.current && !infoRef.current.contains(e.target as Node)) {
+        setShowInfo(false);
+      }
+    }
+    if (showInfo) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [showInfo]);
 
   useEffect(() => {
     loadData();
@@ -98,7 +112,43 @@ export function Insights() {
 
         {/* Anxiety curve */}
         <Card className="mt-6">
-          <h2 className="text-lg font-semibold text-white mb-4">潜意识焦虑曲线</h2>
+          <div className="relative flex items-center gap-2 mb-4" ref={infoRef}>
+            <h2 className="text-lg font-semibold text-white">潜意识焦虑曲线</h2>
+            <button
+              onClick={() => setShowInfo((v) => !v)}
+              className="relative group"
+              aria-label="查看说明"
+            >
+              <svg width="18" height="18" viewBox="0 0 18 18" fill="none" className="text-gray-400 group-hover:text-white transition-colors">
+                <circle cx="9" cy="9" r="8" stroke="currentColor" strokeWidth="1.5" />
+                <text x="9" y="13" textAnchor="middle" fill="currentColor" fontSize="11" fontWeight="600">i</text>
+              </svg>
+            </button>
+            {showInfo && (
+              <motion.div
+                initial={{ opacity: 0, scale: 0.95, y: -4 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.95, y: -4 }}
+                transition={{ duration: 0.15 }}
+                className="absolute top-full left-0 mt-2 z-50 w-80 p-4 rounded-xl bg-night-800/90 backdrop-blur-xl border border-white/10 shadow-2xl"
+              >
+                <div className="space-y-3 text-sm text-gray-300">
+                  <div>
+                    <p className="font-medium text-white mb-1">焦虑曲线</p>
+                    <p>基于你记录的梦境，AI 自动评估每次梦境的焦虑程度并生成分数，折线图展示焦虑指数随时间的变化趋势。</p>
+                  </div>
+                  <div>
+                    <p className="font-medium text-white mb-1">焦虑指数</p>
+                    <p>0-10 分，分数越高表示梦境中反映的焦虑程度越深。</p>
+                  </div>
+                  <div>
+                    <p className="font-medium text-white mb-1">均值线</p>
+                    <p>虚线标注所有记录的平均焦虑水平，帮助你识别高峰期。</p>
+                  </div>
+                </div>
+              </motion.div>
+            )}
+          </div>
           <AnxietyCurve dataPoints={anxiety?.dataPoints || []} days={days} />
         </Card>
 
