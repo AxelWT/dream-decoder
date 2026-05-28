@@ -24,7 +24,7 @@ router.get('/plans', async (_req: Request, res: Response) => {
 router.post('/stripe/create-checkout', authMiddleware, async (req: AuthRequest, res: Response) => {
   try {
     const { plan } = req.body;
-    if (!plan || !['PRO', 'PREMIUM'].includes(plan)) {
+    if (!plan || !['PRO', 'PREMIUM', 'LIFETIME'].includes(plan)) {
       return res.status(400).json({ error: '无效的订阅计划' });
     }
     const result = await createCheckoutSession(req.userId!, plan);

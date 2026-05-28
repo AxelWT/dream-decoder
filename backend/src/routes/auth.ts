@@ -6,6 +6,8 @@ import {
   loginWithPassword,
   register,
   getCurrentUser,
+  sendResetCode,
+  resetPassword,
 } from '../services/auth.js';
 import { authMiddleware, AuthRequest } from '../middleware/auth.js';
 
@@ -56,6 +58,38 @@ router.post('/login-password', async (req: Request, res: Response) => {
     res.json(result);
   } catch (err: any) {
     const message = err.message || '登录失败';
+    res.status(400).json({ error: message });
+  }
+});
+
+// POST /api/auth/forgot-password
+router.post('/forgot-password', async (req: Request, res: Response) => {
+  try {
+    const { email } = req.body;
+    emailSchema.parse(email);
+    const result = await sendResetCode(email);
+    res.json(result);
+  } catch (err: any) {
+    const message = err.message || '发送重置码失败';
+    res.status(400).json({ error: message });
+  }
+});
+
+// POST /api/auth/reset-password
+router.post('/reset-password', async (req: Request, res: Response) => {
+  try {
+    const { email, code, newPassword } = req.body;
+    emailSchema.parse(email);
+    if (!code || typeof code !== 'string') {
+      throw new Error('请输入重置码');
+    }
+    if (!newPassword || newPassword.length < 6) {
+      throw new Error('新密码至少6位');
+    }
+    const result = await resetPassword(email, code, newPassword);
+    res.json(result);
+  } catch (err: any) {
+    const message = err.message || '重置密码失败';
     res.status(400).json({ error: message });
   }
 });

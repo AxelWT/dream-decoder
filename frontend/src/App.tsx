@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { MainLayout } from './components/Layout/MainLayout';
 import { Home } from './pages/Home';
 import { Login } from './pages/Login';
@@ -10,6 +10,7 @@ import { Gallery } from './pages/Gallery';
 import { Profile } from './pages/Profile';
 import { Pricing } from './pages/Pricing';
 import { PaymentSuccess } from './pages/PaymentSuccess';
+import { NotFound } from './pages/NotFound';
 import { DreamDetail } from './components/Dream/DreamDetail';
 
 export default function App() {
@@ -30,7 +31,7 @@ export default function App() {
           <Route path="/profile" element={<Profile />} />
           <Route path="/dream/:id" element={<DreamDetail />} />
         </Route>
-        <Route path="*" element={<Navigate to="/" replace />} />
+        <Route path="*" element={<NotFound />} />
       </Routes>
     </BrowserRouter>
   );

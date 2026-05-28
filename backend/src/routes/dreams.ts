@@ -1,6 +1,6 @@
 import { Router, Response } from 'express';
 import { prisma } from '../index.js';
-import { dreamSchema } from '../utils/validator.js';
+import { dreamSchema, updateDreamSchema } from '../utils/validator.js';
 import { authMiddleware, AuthRequest } from '../middleware/auth.js';
 
 const router = Router();
@@ -76,6 +76,31 @@ router.get('/:id', async (req: AuthRequest, res: Response) => {
     res.json(dream);
   } catch (err: any) {
     res.status(400).json({ error: err.message || '获取梦境详情失败' });
+  }
+});
+
+// PUT /api/dreams/:id
+router.put('/:id', async (req: AuthRequest, res: Response) => {
+  try {
+    const data = updateDreamSchema.parse(req.body);
+
+    const existing = await prisma.dream.findFirst({
+      where: { id: req.params.id, userId: req.userId! },
+    });
+
+    if (!existing) {
+      return res.status(404).json({ error: '梦境不存在' });
+    }
+
+    const dream = await prisma.dream.update({
+      where: { id: req.params.id },
+      data,
+    });
+
+    res.json(dream);
+  } catch (err: any) {
+    const message = err.message || '更新梦境失败';
+    res.status(400).json({ error: message });
   }
 });
 

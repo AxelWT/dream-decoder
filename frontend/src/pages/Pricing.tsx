@@ -29,11 +29,6 @@ export function Pricing() {
     }
 
     if (plan.id === 'FREE') return;
-    if (plan.id === 'LIFETIME') {
-      // Lifetime plan - could redirect to a different payment flow
-      alert('终身版暂未开放，敬请期待');
-      return;
-    }
 
     try {
       setLoading(plan.id);

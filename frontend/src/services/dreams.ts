@@ -13,6 +13,10 @@ export async function getDream(id: string) {
   return api.get<Dream>(`/dreams/${id}`);
 }
 
+export async function updateDream(id: string, data: Partial<DreamFormData>) {
+  return api.put<Dream>(`/dreams/${id}`, data);
+}
+
 export async function deleteDream(id: string) {
   return api.delete<{ success: boolean }>(`/dreams/${id}`);
 }

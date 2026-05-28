@@ -26,3 +26,11 @@ export async function registerUser(email: string, password: string, nickname?: s
 export async function getCurrentUser() {
   return api.get<User>('/auth/me');
 }
+
+export async function sendResetCode(email: string) {
+  return api.post<{ success: boolean; message: string }>('/auth/forgot-password', { email });
+}
+
+export async function resetPassword(email: string, code: string, newPassword: string) {
+  return api.post<{ success: boolean; message: string }>('/auth/reset-password', { email, code, newPassword });
+}

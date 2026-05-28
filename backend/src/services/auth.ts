@@ -144,6 +144,62 @@ export async function register(email: string, password: string, nickname?: strin
   };
 }
 
+export async function sendResetCode(email: string) {
+  const user = await prisma.user.findUnique({ where: { email } });
+
+  if (!user) {
+    // Don't reveal whether the email exists
+    return { success: true, message: '如果该邮箱已注册，重置码将发送到您的邮箱' };
+  }
+
+  const code = generateCode();
+  const expiresAt = Date.now() + 10 * 60 * 1000; // 10 minutes
+
+  codeStore.set(`reset:${email}`, { code, expiresAt });
+
+  if (process.env.NODE_ENV !== 'production') {
+    console.log(`🔑 密码重置码 [${email}]: ${code}`);
+    return { success: true, message: `重置码已发送（开发模式，查看控制台）` };
+  }
+
+  const { sendEmail } = await import('./email.js');
+  await sendEmail({
+    to: email,
+    subject: '梦境解构师 - 密码重置',
+    html: `<p>您的密码重置码是：<strong>${code}</strong>，10分钟内有效。如果您没有请求重置密码，请忽略此邮件。</p>`,
+  });
+
+  return { success: true, message: '如果该邮箱已注册，重置码将发送到您的邮箱' };
+}
+
+export async function resetPassword(email: string, code: string, newPassword: string) {
+  const stored = codeStore.get(`reset:${email}`);
+
+  if (!stored) {
+    throw new Error('请先获取重置码');
+  }
+
+  if (Date.now() > stored.expiresAt) {
+    codeStore.delete(`reset:${email}`);
+    throw new Error('重置码已过期，请重新获取');
+  }
+
+  if (stored.code !== code) {
+    throw new Error('重置码错误');
+  }
+
+  codeStore.delete(`reset:${email}`);
+
+  const passwordHash = await bcrypt.hash(newPassword, 10);
+
+  const user = await prisma.user.update({
+    where: { email },
+    data: { passwordHash },
+  });
+
+  return { success: true, message: '密码重置成功，请使用新密码登录' };
+}
+
 export async function getCurrentUser(userId: string) {
   const user = await prisma.user.findUnique({
     where: { id: userId },

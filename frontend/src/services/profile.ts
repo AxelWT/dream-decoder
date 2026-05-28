@@ -12,3 +12,7 @@ export async function updateProfile(data: Partial<Profile>): Promise<Profile> {
 export async function getProfileStats(): Promise<ProfileStats> {
   return api.get<ProfileStats>('/profile/stats');
 }
+
+export async function uploadAvatar(avatar: string) {
+  return api.put<{ id: string; avatar: string }>('/profile/avatar', { avatar });
+}

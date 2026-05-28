@@ -4,10 +4,11 @@ import { motion } from 'framer-motion';
 import { LoginForm } from '../components/Auth/LoginForm';
 import { RegisterForm } from '../components/Auth/RegisterForm';
 import { CodeLoginForm } from '../components/Auth/CodeLoginForm';
+import { ForgotPasswordForm } from '../components/Auth/ForgotPasswordForm';
 import { useAuthStore } from '../stores/authStore';
-import { loginWithPassword, registerUser, sendVerificationCode, verifyCode } from '../services/auth';
+import { loginWithPassword, registerUser, sendVerificationCode, verifyCode, sendResetCode, resetPassword } from '../services/auth';
 
-type AuthMode = 'login' | 'register' | 'code';
+type AuthMode = 'login' | 'register' | 'code' | 'forgot';
 
 export function Login() {
   const [mode, setMode] = useState<AuthMode>('login');
@@ -80,6 +81,33 @@ export function Login() {
     }
   };
 
+  const handleSendResetCode = async (email: string) => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      await sendResetCode(email);
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleResetPassword = async (email: string, code: string, newPassword: string) => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      await resetPassword(email, code, newPassword);
+      setMode('login');
+      setError(null);
+      alert('密码重置成功，请使用新密码登录');
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-night-950 flex items-center justify-center p-4 relative overflow-hidden">
       {/* Background decorations */}
@@ -132,6 +160,7 @@ export function Login() {
               onLogin={handleLogin}
               onSwitchToRegister={() => { setMode('register'); setError(null); }}
               onSwitchToCode={() => { setMode('code'); setError(null); }}
+              onForgotPassword={() => { setMode('forgot'); setError(null); }}
               isLoading={isLoading}
               error={error}
             />
@@ -149,6 +178,15 @@ export function Login() {
               onSendCode={handleSendCode}
               onVerify={handleVerify}
               onSwitchToLogin={() => { setMode('login'); setError(null); }}
+              isLoading={isLoading}
+              error={error}
+            />
+          )}
+          {mode === 'forgot' && (
+            <ForgotPasswordForm
+              onSendCode={handleSendResetCode}
+              onReset={handleResetPassword}
+              onBack={() => { setMode('login'); setError(null); }}
               isLoading={isLoading}
               error={error}
             />

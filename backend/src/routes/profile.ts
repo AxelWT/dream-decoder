@@ -34,6 +34,31 @@ router.get('/', async (req: AuthRequest, res: Response) => {
   }
 });
 
+// PUT /api/profile/avatar
+router.put('/avatar', async (req: AuthRequest, res: Response) => {
+  try {
+    const { avatar } = req.body;
+    if (!avatar || typeof avatar !== 'string') {
+      return res.status(400).json({ error: '请提供头像数据' });
+    }
+
+    // Validate base64 image (max ~2MB after encoding)
+    if (avatar.length > 2_800_000) {
+      return res.status(400).json({ error: '头像文件过大，请压缩后重试' });
+    }
+
+    const user = await prisma.user.update({
+      where: { id: req.userId! },
+      data: { avatar },
+      select: { id: true, avatar: true },
+    });
+
+    res.json(user);
+  } catch (err: any) {
+    res.status(400).json({ error: err.message || '上传头像失败' });
+  }
+});
+
 // PUT /api/profile
 router.put('/', async (req: AuthRequest, res: Response) => {
   try {

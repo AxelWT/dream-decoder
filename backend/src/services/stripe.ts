@@ -8,6 +8,7 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
 const PRICE_IDS: Record<string, string> = {
   PRO: process.env.STRIPE_PRO_PRICE_ID!,
   PREMIUM: process.env.STRIPE_PREMIUM_PRICE_ID!,
+  LIFETIME: process.env.STRIPE_LIFETIME_PRICE_ID!,
 };
 
 export async function createCheckoutSession(userId: string, plan: string) {
@@ -33,9 +34,11 @@ export async function createCheckoutSession(userId: string, plan: string) {
     customerId = customer.id;
   }
 
+  const isLifetime = plan === 'LIFETIME';
+
   const session = await stripe.checkout.sessions.create({
     customer: customerId,
-    mode: 'subscription',
+    mode: isLifetime ? 'payment' : 'subscription',
     payment_method_types: ['card'],
     line_items: [{ price: priceId, quantity: 1 }],
     success_url: `${process.env.FRONTEND_URL || 'http://localhost:5173'}/payment-success?session_id={CHECKOUT_SESSION_ID}`,
@@ -70,27 +73,48 @@ export async function handleWebhook(event: Stripe.Event) {
 
       if (!userId || !plan) break;
 
-      const subscription = await stripe.subscriptions.retrieve(
-        session.subscription as string
-      );
+      if (plan === 'LIFETIME') {
+        // One-time payment: no subscription to retrieve
+        await prisma.subscription.upsert({
+          where: { userId },
+          create: {
+            userId,
+            stripeCustomerId: session.customer as string,
+            stripeSubId: `lifetime_${session.id}`,
+            plan,
+            status: 'active',
+            currentPeriodEnd: new Date('2099-12-31'),
+          },
+          update: {
+            stripeSubId: `lifetime_${session.id}`,
+            plan,
+            status: 'active',
+            currentPeriodEnd: new Date('2099-12-31'),
+          },
+        });
+      } else {
+        const subscription = await stripe.subscriptions.retrieve(
+          session.subscription as string
+        );
 
-      await prisma.subscription.upsert({
-        where: { userId },
-        create: {
-          userId,
-          stripeCustomerId: session.customer as string,
-          stripeSubId: subscription.id,
-          plan,
-          status: subscription.status,
-          currentPeriodEnd: new Date(subscription.current_period_end * 1000),
-        },
-        update: {
-          stripeSubId: subscription.id,
-          plan,
-          status: subscription.status,
-          currentPeriodEnd: new Date(subscription.current_period_end * 1000),
-        },
-      });
+        await prisma.subscription.upsert({
+          where: { userId },
+          create: {
+            userId,
+            stripeCustomerId: session.customer as string,
+            stripeSubId: subscription.id,
+            plan,
+            status: subscription.status,
+            currentPeriodEnd: new Date(subscription.current_period_end * 1000),
+          },
+          update: {
+            stripeSubId: subscription.id,
+            plan,
+            status: subscription.status,
+            currentPeriodEnd: new Date(subscription.current_period_end * 1000),
+          },
+        });
+      }
 
       await prisma.user.update({
         where: { id: userId },
@@ -173,6 +197,7 @@ export async function getPlans() {
       price: 499,
       currency: 'CNY',
       interval: 'one-time',
+      priceId: PRICE_IDS.LIFETIME,
       features: ['深度版全部功能', '终身免费更新', '专属徽章'],
     },
   ];

@@ -199,6 +199,53 @@ export async function* streamChat(params: {
     },
   });
 
+  // Auto-extract aiSummary and anxietyScore if linked to a dream
+  if (dreamId) {
+    try {
+      const extractionPrompt = `请分析以下梦境对话，返回 JSON 格式（不要包含其他文字，只返回 JSON）：
+{"summary": "一句话梦境摘要", "anxietyScore": 0-10 的焦虑指数}
+
+[对话内容]
+用户: ${message}
+AI: ${fullContent}`;
+
+      const extractResponse = await fetch(DEEPSEEK_API_URL, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${DEEPSEEK_API_KEY}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          model: 'deepseek-chat',
+          messages: [{ role: 'user', content: extractionPrompt }],
+          stream: false,
+          max_tokens: 200,
+          temperature: 0.3,
+        }),
+      });
+
+      if (extractResponse.ok) {
+        const extractData = await extractResponse.json();
+        const content = extractData.choices?.[0]?.message?.content || '';
+        // Try to parse JSON from the response
+        const jsonMatch = content.match(/\{[\s\S]*\}/);
+        if (jsonMatch) {
+          const parsed = JSON.parse(jsonMatch[0]);
+          await prisma.dream.update({
+            where: { id: dreamId },
+            data: {
+              aiSummary: parsed.summary || null,
+              anxietyScore: typeof parsed.anxietyScore === 'number' ? parsed.anxietyScore : null,
+            },
+          });
+        }
+      }
+    } catch (err) {
+      // Non-critical: log but don't fail the stream
+      console.error('Failed to extract aiSummary/anxietyScore:', err);
+    }
+  }
+
   // Return session info at the end
   yield `\n[SESSION_ID:${session.id}]`;
 }

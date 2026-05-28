@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import type { Dream, DreamFormData } from '../types';
-import { createDream, getDreams, getDream, deleteDream } from '../services/dreams';
+import { createDream, getDreams, getDream, deleteDream, updateDream } from '../services/dreams';
 
 interface DreamStore {
   dreams: Dream[];
@@ -13,6 +13,7 @@ interface DreamStore {
   fetchDreams: (page?: number) => Promise<void>;
   fetchDream: (id: string) => Promise<void>;
   addDream: (data: DreamFormData) => Promise<Dream>;
+  editDream: (id: string, data: Partial<DreamFormData>) => Promise<Dream>;
   removeDream: (id: string) => Promise<void>;
   clearCurrent: () => void;
 }
@@ -54,6 +55,15 @@ export const useDreamStore = create<DreamStore>((set, get) => ({
   addDream: async (data: DreamFormData) => {
     const dream = await createDream(data);
     set((state) => ({ dreams: [dream, ...state.dreams], total: state.total + 1 }));
+    return dream;
+  },
+
+  editDream: async (id: string, data: Partial<DreamFormData>) => {
+    const dream = await updateDream(id, data);
+    set((state) => ({
+      dreams: state.dreams.map((d) => (d.id === id ? dream : d)),
+      currentDream: state.currentDream?.id === id ? dream : state.currentDream,
+    }));
     return dream;
   },
 

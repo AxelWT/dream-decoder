@@ -37,6 +37,15 @@ export const profileSchema = z.object({
   preferredSchool: z.string().optional(),
 });
 
+export const updateDreamSchema = z.object({
+  title: z.string().max(100).optional(),
+  content: z.string().min(1, '请输入梦境内容').max(5000).optional(),
+  emotions: z.array(z.string()).optional(),
+  clarity: z.enum(['blurry', 'normal', 'clear', 'vivid']).optional(),
+  dreamType: z.enum(['nightmare', 'recurring', 'lucid', 'normal']).optional(),
+  scenes: z.array(z.string()).optional(),
+});
+
 export const chatSchema = z.object({
   dreamId: z.string().optional(),
   sessionId: z.string().optional(),

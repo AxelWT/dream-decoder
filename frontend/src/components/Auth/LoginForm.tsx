@@ -6,11 +6,12 @@ interface LoginFormProps {
   onLogin: (email: string, password: string) => Promise<void>;
   onSwitchToRegister: () => void;
   onSwitchToCode: () => void;
+  onForgotPassword: () => void;
   isLoading: boolean;
   error: string | null;
 }
 
-export function LoginForm({ onLogin, onSwitchToRegister, onSwitchToCode, isLoading, error }: LoginFormProps) {
+export function LoginForm({ onLogin, onSwitchToRegister, onSwitchToCode, onForgotPassword, isLoading, error }: LoginFormProps) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
 
@@ -55,13 +56,22 @@ export function LoginForm({ onLogin, onSwitchToRegister, onSwitchToCode, isLoadi
       </Button>
 
       <div className="flex items-center justify-between text-sm">
-        <button
-          type="button"
-          onClick={onSwitchToCode}
-          className="text-dream-purple hover:text-dream-purple/80 transition-colors"
-        >
-          验证码登录
-        </button>
+        <div className="flex gap-3">
+          <button
+            type="button"
+            onClick={onSwitchToCode}
+            className="text-dream-purple hover:text-dream-purple/80 transition-colors"
+          >
+            验证码登录
+          </button>
+          <button
+            type="button"
+            onClick={onForgotPassword}
+            className="text-gray-500 hover:text-gray-300 transition-colors"
+          >
+            忘记密码？
+          </button>
+        </div>
         <button
           type="button"
           onClick={onSwitchToRegister}
