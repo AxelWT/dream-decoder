@@ -19,6 +19,7 @@ model User {
   createdAt       DateTime       @default(now())
   profile         Profile?
   subscription    Subscription?
+  orders          Order[]
   dreams          Dream[]
   chatSessions    ChatSession[]
   cards           DreamCard[]
@@ -109,11 +110,24 @@ model DreamCard {
 model Subscription {
   id               String    @id @default(cuid())
   userId           String    @unique
-  stripeCustomerId String    @unique
-  stripeSubId      String?   @unique
-  plan             String    // PRO | PREMIUM
-  status           String    // active | canceled | past_due
+  plan             String    // PRO | PREMIUM | LIFETIME
+  status           String    // active | canceled | expired
   currentPeriodEnd DateTime?
   createdAt        DateTime  @default(now())
   user             User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Order {
+  id           String   @id @default(cuid())
+  userId       String
+  plan         String   // PRO | PREMIUM | LIFETIME
+  amount       Int      // 价格（分）
+  orderId      String   @unique // PayJS 订单号
+  payjsOrderId String?  // PayJS 返回的 orderid
+  status       String   @default("pending") // pending | paid | failed
+  createdAt    DateTime @default(now())
+  paidAt       DateTime?
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
 }

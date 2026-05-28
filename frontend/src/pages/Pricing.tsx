@@ -1,8 +1,8 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useAuthStore } from '../stores/authStore';
-import { getPlans, createCheckout } from '../services/stripe';
+import { getPlans, createOrder, getOrderStatus } from '../services/payjs';
 import type { Plan } from '../types';
 
 const planStyles: Record<string, { gradient: string; badge?: string }> = {
@@ -13,14 +13,47 @@ const planStyles: Record<string, { gradient: string; badge?: string }> = {
 };
 
 export function Pricing() {
-  const { user, isAuthenticated } = useAuthStore();
+  const { user, isAuthenticated, fetchUser } = useAuthStore();
   const navigate = useNavigate();
   const [plans, setPlans] = useState<Plan[]>([]);
   const [loading, setLoading] = useState<string | null>(null);
+  const [showModal, setShowModal] = useState(false);
+  const [qrCode, setQrCode] = useState<string | null>(null);
+  const [currentOrderId, setCurrentOrderId] = useState<string | null>(null);
+  const [currentPlan, setCurrentPlan] = useState<string | null>(null);
+  const [pollStatus, setPollStatus] = useState<'polling' | 'paid' | 'error' | null>(null);
+  const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   useEffect(() => {
     getPlans().then(setPlans).catch(console.error);
   }, []);
+
+  // Poll for order status when modal is open
+  useEffect(() => {
+    if (!showModal || !currentOrderId || pollStatus !== 'polling') return;
+
+    pollRef.current = setInterval(async () => {
+      try {
+        const result = await getOrderStatus(currentOrderId);
+        if (result.status === 'paid') {
+          setPollStatus('paid');
+          if (pollRef.current) clearInterval(pollRef.current);
+          await fetchUser();
+          // Navigate to success page after a short delay
+          setTimeout(() => {
+            setShowModal(false);
+            navigate(`/payment-success?order_id=${currentOrderId}`);
+          }, 1500);
+        }
+      } catch {
+        // Ignore polling errors, keep trying
+      }
+    }, 2000);
+
+    return () => {
+      if (pollRef.current) clearInterval(pollRef.current);
+    };
+  }, [showModal, currentOrderId, pollStatus, fetchUser, navigate]);
 
   const handleUpgrade = async (plan: Plan) => {
     if (!isAuthenticated) {
@@ -32,13 +65,26 @@ export function Pricing() {
 
     try {
       setLoading(plan.id);
-      const { url } = await createCheckout(plan.id);
-      window.location.href = url;
+      const { qrcode, orderId } = await createOrder(plan.id);
+      setQrCode(qrcode);
+      setCurrentOrderId(orderId);
+      setCurrentPlan(plan.id);
+      setPollStatus('polling');
+      setShowModal(true);
     } catch (err: any) {
-      alert(err.message || '创建支付会话失败');
+      alert(err.message || '创建支付订单失败');
     } finally {
       setLoading(null);
     }
+  };
+
+  const handleCloseModal = () => {
+    setShowModal(false);
+    setQrCode(null);
+    setCurrentOrderId(null);
+    setCurrentPlan(null);
+    setPollStatus(null);
+    if (pollRef.current) clearInterval(pollRef.current);
   };
 
   return (
@@ -119,13 +165,71 @@ export function Pricing() {
                       : 'bg-dream-purple hover:bg-dream-purple/80 text-white glow-purple'
                   } disabled:opacity-50`}
                 >
-                  {loading === plan.id ? '跳转中...' : isCurrent ? '当前计划' : plan.id === 'FREE' ? '免费使用' : '立即升级'}
+                  {loading === plan.id ? '创建中...' : isCurrent ? '当前计划' : plan.id === 'FREE' ? '免费使用' : '立即升级'}
                 </button>
               </motion.div>
             );
           })}
         </div>
       </div>
+
+      {/* Payment QR Code Modal */}
+      <AnimatePresence>
+        {showModal && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm px-4"
+            onClick={handleCloseModal}
+          >
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              className="bg-night-800 rounded-2xl border border-night-600 p-8 max-w-sm w-full text-center"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {pollStatus === 'paid' ? (
+                <>
+                  <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-emerald-500/20 flex items-center justify-center">
+                    <svg className="w-8 h-8 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                    </svg>
+                  </div>
+                  <h3 className="text-xl font-bold text-white mb-2">支付成功</h3>
+                  <p className="text-gray-400 text-sm">正在跳转...</p>
+                </>
+              ) : (
+                <>
+                  <h3 className="text-lg font-bold text-white mb-2">微信扫码支付</h3>
+                  <p className="text-gray-400 text-sm mb-4">
+                    请使用微信扫描下方二维码完成支付
+                  </p>
+
+                  {/* QR Code */}
+                  {qrCode && (
+                    <div className="bg-white rounded-xl p-4 inline-block mb-4">
+                      <img src={qrCode} alt="支付二维码" className="w-48 h-48" />
+                    </div>
+                  )}
+
+                  <p className="text-gray-500 text-xs mb-4">
+                    支付完成后页面将自动跳转
+                  </p>
+
+                  <button
+                    onClick={handleCloseModal}
+                    className="text-gray-400 hover:text-white text-sm transition-colors"
+                  >
+                    取消支付
+                  </button>
+                </>
+              )}
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

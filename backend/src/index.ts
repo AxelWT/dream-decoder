@@ -10,7 +10,7 @@ import analysisRoutes from './routes/analysis.js';
 import profileRoutes from './routes/profile.js';
 import insightsRoutes from './routes/insights.js';
 import cardsRoutes from './routes/cards.js';
-import stripeRoutes from './routes/stripe.js';
+import payjsRoutes from './routes/payjs.js';
 import { errorHandler } from './middleware/errorHandler.js';
 
 export const prisma = new PrismaClient();
@@ -19,9 +19,6 @@ const app = express();
 const PORT = process.env.PORT || 3001;
 
 app.use(cors());
-
-// Stripe webhook needs raw body - must be before express.json()
-app.use('/api/stripe/webhook', express.raw({ type: 'application/json' }));
 app.use(express.json({ limit: '10mb' }));
 
 // Routes
@@ -31,7 +28,7 @@ app.use('/api/analysis', analysisRoutes);
 app.use('/api/profile', profileRoutes);
 app.use('/api/insights', insightsRoutes);
 app.use('/api/cards', cardsRoutes);
-app.use('/api', stripeRoutes); // /api/plans, /api/stripe/*
+app.use('/api', payjsRoutes); // /api/plans, /api/payjs/*
 
 // Health check
 app.get('/api/health', (_req, res) => {
