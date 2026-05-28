@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { MainLayout } from './components/Layout/MainLayout';
 import { Home } from './pages/Home';
 import { Login } from './pages/Login';
@@ -31,6 +31,7 @@ export default function App() {
           <Route path="/profile" element={<Profile />} />
           <Route path="/dream/:id" element={<DreamDetail />} />
         </Route>
+        <Route path="/dreams" element={<Navigate to="/timeline" replace />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
     </BrowserRouter>
