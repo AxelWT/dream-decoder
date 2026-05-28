@@ -47,6 +47,19 @@ jobs:
     needs: build-and-push
     runs-on: ubuntu-latest
     steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Copy docker-compose.prod.yml to server
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.ECS_HOST }}
+          username: ${{ secrets.ECS_USERNAME }}
+          key: ${{ secrets.ECS_SSH_KEY }}
+          source: deploy/docker-compose.prod.yml
+          target: ${{ secrets.ECS_DEPLOY_PATH }}
+          strip_components: 1
+
       - name: Deploy to server
         uses: appleboy/ssh-action@v1
         with:
@@ -55,6 +68,28 @@ jobs:
           key: ${{ secrets.ECS_SSH_KEY }}
           script: |
             cd ${{ secrets.ECS_DEPLOY_PATH }}
+
+            # Write .env file
+            cat > .env << ENV_EOF
+            ACR_REGISTRY=${{ secrets.ACR_REGISTRY }}
+            ACR_NAMESPACE=${{ secrets.ACR_NAMESPACE }}
+            POSTGRES_USER=${{ secrets.POSTGRES_USER }}
+            POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }}
+            POSTGRES_DB=${{ secrets.POSTGRES_DB }}
+            DATABASE_URL=${{ secrets.DATABASE_URL }}
+            JWT_SECRET=${{ secrets.JWT_SECRET }}
+            DEEPSEEK_API_KEY=${{ secrets.DEEPSEEK_API_KEY }}
+            SMTP_HOST=${{ secrets.SMTP_HOST }}
+            SMTP_PORT=${{ secrets.SMTP_PORT }}
+            SMTP_USER=${{ secrets.SMTP_USER }}
+            SMTP_PASS=${{ secrets.SMTP_PASS }}
+            SMTP_FROM=${{ secrets.SMTP_FROM }}
+            PAYJS_KEY=${{ secrets.PAYJS_KEY }}
+            PAYJS_MCHID=${{ secrets.PAYJS_MCHID }}
+            FRONTEND_URL=${{ secrets.FRONTEND_URL }}
+            BACKEND_URL=${{ secrets.BACKEND_URL }}
+            PORT=${{ secrets.PORT }}
+            ENV_EOF
 
             # Login to ACR
             echo "${{ secrets.ACR_PASSWORD }}" | docker login ${{ secrets.ACR_REGISTRY }} -u ${{ secrets.ACR_USERNAME }} --password-stdin
