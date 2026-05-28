@@ -18,6 +18,8 @@ RUN npm run build
 # ---- Production Stage ----
 FROM node:20-alpine
 
+RUN apk add --no-cache openssl1.1-compat
+
 WORKDIR /app
 
 COPY package.json package-lock.json ./
