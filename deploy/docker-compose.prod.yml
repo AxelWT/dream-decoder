@@ -1,0 +1,35 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: always
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB:-dream_decoder}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    image: ${ACR_REGISTRY}/${ACR_NAMESPACE}/dream-decoder-backend:latest
+    restart: always
+    env_file:
+      - .env
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  frontend:
+    image: ${ACR_REGISTRY}/${ACR_NAMESPACE}/dream-decoder-frontend:latest
+    restart: always
+    ports:
+      - "3002:80"
+    depends_on:
+      - backend
+
+volumes:
+  pgdata:
