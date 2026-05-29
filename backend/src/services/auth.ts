@@ -112,7 +112,17 @@ export async function loginWithPassword(email: string, password: string) {
   };
 }
 
-export async function register(email: string, password: string, nickname?: string) {
+export async function register(email: string, password: string, nickname: string | undefined, code: string) {
+  // Verify email code first
+  const stored = codeStore.get(email);
+  if (!stored) throw new Error('请先获取验证码');
+  if (Date.now() > stored.expiresAt) {
+    codeStore.delete(email);
+    throw new Error('验证码已过期，请重新获取');
+  }
+  if (stored.code !== code) throw new Error('验证码错误');
+  codeStore.delete(email);
+
   const existing = await prisma.user.findUnique({ where: { email } });
 
   if (existing) {

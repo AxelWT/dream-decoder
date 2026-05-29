@@ -41,11 +41,11 @@ export function Login() {
     }
   };
 
-  const handleRegister = async (email: string, password: string, nickname: string) => {
+  const handleRegister = async (email: string, password: string, nickname: string, code: string) => {
     setIsLoading(true);
     setError(null);
     try {
-      const result = await registerUser(email, password, nickname);
+      const result = await registerUser(email, password, nickname, code);
       setAuth(result.token, result.user);
       navigate('/');
     } catch (err: any) {
@@ -168,6 +168,7 @@ export function Login() {
           {mode === 'register' && (
             <RegisterForm
               onRegister={handleRegister}
+              onSendCode={handleSendCode}
               onSwitchToLogin={() => { setMode('login'); setError(null); }}
               isLoading={isLoading}
               error={error}

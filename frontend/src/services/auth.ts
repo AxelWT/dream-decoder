@@ -19,8 +19,8 @@ export async function loginWithPassword(email: string, password: string) {
   return api.post<AuthResponse>('/auth/login-password', { email, password });
 }
 
-export async function registerUser(email: string, password: string, nickname?: string) {
-  return api.post<AuthResponse>('/auth/register', { email, password, nickname });
+export async function registerUser(email: string, password: string, nickname: string | undefined, code: string) {
+  return api.post<AuthResponse>('/auth/register', { email, password, nickname, code });
 }
 
 export async function getCurrentUser() {

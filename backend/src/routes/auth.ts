@@ -42,7 +42,7 @@ router.post('/verify', async (req: Request, res: Response) => {
 router.post('/register', async (req: Request, res: Response) => {
   try {
     const data = registerSchema.parse(req.body);
-    const result = await register(data.email, data.password, data.nickname);
+    const result = await register(data.email, data.password, data.nickname, data.code);
     res.json(result);
   } catch (err: any) {
     const message = err.message || '注册失败';
