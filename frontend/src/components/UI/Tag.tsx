@@ -29,6 +29,7 @@ export function Tag({ label, selected = false, onClick, variant = 'default', siz
   if (onClick) {
     return (
       <motion.button
+        type="button"
         whileTap={{ scale: 0.95 }}
         onClick={onClick}
         className={`
