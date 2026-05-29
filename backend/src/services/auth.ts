@@ -16,8 +16,8 @@ export async function sendVerificationCode(email: string) {
 
   codeStore.set(email, { code, expiresAt });
 
-  // In development, log the code instead of sending email
-  if (process.env.NODE_ENV !== 'production') {
+  // Log code to console unless ENABLE_EMAIL is set
+  if (!process.env.ENABLE_EMAIL) {
     console.log(`📧 验证码 [${email}]: ${code}`);
     return { success: true, message: `验证码已发送（开发模式，查看控制台）` };
   }
@@ -157,7 +157,7 @@ export async function sendResetCode(email: string) {
 
   codeStore.set(`reset:${email}`, { code, expiresAt });
 
-  if (process.env.NODE_ENV !== 'production') {
+  if (!process.env.ENABLE_EMAIL) {
     console.log(`🔑 密码重置码 [${email}]: ${code}`);
     return { success: true, message: `重置码已发送（开发模式，查看控制台）` };
   }
