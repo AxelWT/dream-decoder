@@ -1,6 +1,8 @@
 import dotenv from 'dotenv';
 dotenv.config();
 
+import path from 'path';
+import { fileURLToPath } from 'url';
 import express from 'express';
 import cors from 'cors';
 import { PrismaClient } from '@prisma/client';
@@ -12,6 +14,8 @@ import insightsRoutes from './routes/insights.js';
 import cardsRoutes from './routes/cards.js';
 import payjsRoutes from './routes/payjs.js';
 import { errorHandler } from './middleware/errorHandler.js';
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 export const prisma = new PrismaClient();
 
@@ -33,6 +37,16 @@ app.use('/api', payjsRoutes); // /api/plans, /api/payjs/*
 // Health check
 app.get('/api/health', (_req, res) => {
   res.json({ status: 'ok', time: new Date().toISOString() });
+});
+
+// Serve frontend static files (production single-image mode)
+const frontendDist = path.join(__dirname, '../../frontend/dist');
+app.use(express.static(frontendDist));
+
+// SPA fallback: non-API routes return index.html
+app.get('*', (req, res, next) => {
+  if (req.path.startsWith('/api/')) return next();
+  res.sendFile(path.join(frontendDist, 'index.html'));
 });
 
 // Error handler
