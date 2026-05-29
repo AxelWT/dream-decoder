@@ -50,5 +50,5 @@ export const chatSchema = z.object({
   dreamId: z.string().optional(),
   sessionId: z.string().optional(),
   message: z.string().min(1, '请输入消息').max(2000),
-  school: z.enum(['jung', 'freud', 'cognitive', 'integrated']).optional().default('integrated'),
+  school: z.enum(['jung', 'freud', 'cognitive', 'integrated', 'zhougong']).optional().default('integrated'),
 });

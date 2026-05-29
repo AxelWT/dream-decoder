@@ -85,7 +85,7 @@ export const LIFE_CHANGE_OPTIONS = [
 // Dream types
 export type Clarity = 'blurry' | 'normal' | 'clear' | 'vivid';
 export type DreamType = 'nightmare' | 'recurring' | 'lucid' | 'normal';
-export type PsychologySchool = 'jung' | 'freud' | 'cognitive' | 'integrated';
+export type PsychologySchool = 'jung' | 'freud' | 'cognitive' | 'integrated' | 'zhougong';
 
 export interface Dream {
   id: string;
@@ -175,6 +175,7 @@ export const SCHOOL_LABELS: Record<PsychologySchool, string> = {
   freud: '弗洛伊德',
   cognitive: '认知心理',
   integrated: '综合分析',
+  zhougong: '周公解梦',
 };
 
 export const SCHOOL_DESCRIPTIONS: Record<PsychologySchool, string> = {
@@ -182,6 +183,7 @@ export const SCHOOL_DESCRIPTIONS: Record<PsychologySchool, string> = {
   freud: '潜意识愿望与压抑分析',
   cognitive: '日间残留与认知模式',
   integrated: '融合多学派视角',
+  zhougong: '中国传统梦境象征解读',
 };
 
 export const EMOTION_OPTIONS = [

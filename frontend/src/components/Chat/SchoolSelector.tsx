@@ -7,13 +7,14 @@ interface SchoolSelectorProps {
   onSelect: (school: PsychologySchool) => void;
 }
 
-const schools: PsychologySchool[] = ['integrated', 'jung', 'freud', 'cognitive'];
+const schools: PsychologySchool[] = ['integrated', 'jung', 'freud', 'cognitive', 'zhougong'];
 
 const schoolIcons: Record<PsychologySchool, string> = {
   integrated: '🔮',
   jung: '🌙',
   freud: '🧠',
   cognitive: '💡',
+  zhougong: '📜',
 };
 
 export function SchoolSelector({ selected, onSelect }: SchoolSelectorProps) {
