@@ -2,6 +2,7 @@ import { Router, Response } from 'express';
 import { prisma } from '../index.js';
 import { dreamSchema, updateDreamSchema } from '../utils/validator.js';
 import { authMiddleware, AuthRequest } from '../middleware/auth.js';
+import { scoreAnxiety } from '../services/deepseek.js';
 
 const router = Router();
 
@@ -24,6 +25,16 @@ router.post('/', async (req: AuthRequest, res: Response) => {
         scenes: data.scenes,
         recordedAt: data.recordedAt ? new Date(data.recordedAt) : new Date(),
       },
+    });
+
+    // Auto-generate anxiety score in background
+    scoreAnxiety(data.content, data.emotions).then((score) => {
+      if (score !== null) {
+        prisma.dream.update({
+          where: { id: dream.id },
+          data: { anxietyScore: score },
+        }).catch((err) => console.error('Failed to save anxiety score:', err));
+      }
     });
 
     res.json(dream);

@@ -249,3 +249,50 @@ AI: ${fullContent}`;
   // Return session info at the end
   yield `\n[SESSION_ID:${session.id}]`;
 }
+
+export async function scoreAnxiety(content: string, emotions: string[]): Promise<number | null> {
+  try {
+    const prompt = `请分析以下梦境的焦虑程度，返回 JSON 格式（不要包含其他文字，只返回 JSON）：
+{"anxietyScore": 0-10 的焦虑指数}
+
+评分标准：
+- 0-2: 平静、愉快的梦境
+- 3-4: 略有不安但整体平和
+- 5-6: 中等焦虑，有压力或紧张元素
+- 7-8: 高焦虑，噩梦、追赶、坠落等
+- 9-10: 极度焦虑，恐惧、窒息、无法逃脱
+
+[梦境内容]
+${content}
+
+[情绪标签]
+${emotions.join(', ') || '无'}`;
+
+    const response = await fetch(DEEPSEEK_API_URL, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${DEEPSEEK_API_KEY}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: 'deepseek-chat',
+        messages: [{ role: 'user', content: prompt }],
+        stream: false,
+        max_tokens: 100,
+        temperature: 0.3,
+      }),
+    });
+
+    if (!response.ok) return null;
+
+    const data = await response.json();
+    const text = data.choices?.[0]?.message?.content || '';
+    const jsonMatch = text.match(/\{[\s\S]*\}/);
+    if (!jsonMatch) return null;
+
+    const parsed = JSON.parse(jsonMatch[0]);
+    return typeof parsed.anxietyScore === 'number' ? parsed.anxietyScore : null;
+  } catch {
+    return null;
+  }
+}

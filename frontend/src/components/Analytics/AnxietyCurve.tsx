@@ -48,7 +48,8 @@ export function AnxietyCurve({ dataPoints, days }: Props) {
             tickLine={false}
           />
           <YAxis
-            domain={[0, 100]}
+            domain={[0, 10]}
+            ticks={[0, 2, 4, 6, 8, 10]}
             tick={{ fill: '#9ca3af', fontSize: 12 }}
             axisLine={{ stroke: 'rgba(255,255,255,0.1)' }}
             tickLine={false}

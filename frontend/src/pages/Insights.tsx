@@ -1,11 +1,12 @@
 import { useEffect, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
 import { Card } from '../components/UI/Card';
+import { Button } from '../components/UI/Button';
 import { AnxietyCurve } from '../components/Analytics/AnxietyCurve';
 import { ThemeCloud } from '../components/Analytics/ThemeCloud';
 import { StatsCards, DreamTypeDistribution, TopEmotions } from '../components/Analytics/StatsCards';
 import {
-  getAnxietyCurve, getThemeCloud, getInsightStats,
+  getAnxietyCurve, getThemeCloud, getInsightStats, backfillAnxiety,
   type AnxietyCurveResponse, type ThemeCloudResponse, type InsightStats,
 } from '../services/insights';
 
@@ -22,6 +23,7 @@ export function Insights() {
   const [themes, setThemes] = useState<ThemeCloudResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [showInfo, setShowInfo] = useState(false);
+  const [backfilling, setBackfilling] = useState(false);
   const infoRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -71,6 +73,19 @@ export function Insights() {
       setThemes(t);
     } catch (err) {
       console.error('Failed to load time data:', err);
+    }
+  }
+
+  async function handleBackfill() {
+    setBackfilling(true);
+    try {
+      await backfillAnxiety();
+      const a = await getAnxietyCurve(days);
+      setAnxiety(a);
+    } catch (err) {
+      console.error('Failed to backfill anxiety scores:', err);
+    } finally {
+      setBackfilling(false);
     }
   }
 
@@ -138,8 +153,14 @@ export function Insights() {
                     <p>基于你记录的梦境，AI 自动评估每次梦境的焦虑程度并生成分数，折线图展示焦虑指数随时间的变化趋势。</p>
                   </div>
                   <div>
-                    <p className="font-medium text-white mb-1">焦虑指数</p>
-                    <p>0-10 分，分数越高表示梦境中反映的焦虑程度越深。</p>
+                    <p className="font-medium text-white mb-1">焦虑指数（0-10 分）</p>
+                    <ul className="space-y-1 text-xs">
+                      <li>0-2：平静、愉快的梦境</li>
+                      <li>3-4：略有不安但整体平和</li>
+                      <li>5-6：中等焦虑，有压力或紧张元素</li>
+                      <li>7-8：高焦虑，噩梦、追赶、坠落等</li>
+                      <li>9-10：极度焦虑，恐惧、窒息、无法逃脱</li>
+                    </ul>
                   </div>
                   <div>
                     <p className="font-medium text-white mb-1">均值线</p>
@@ -150,6 +171,19 @@ export function Insights() {
             )}
           </div>
           <AnxietyCurve dataPoints={anxiety?.dataPoints || []} days={days} />
+          {(!anxiety?.dataPoints || anxiety.dataPoints.length === 0) && stats && stats.totalDreams > 0 && (
+            <div className="mt-4 text-center">
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={handleBackfill}
+                isLoading={backfilling}
+              >
+                生成焦虑指数
+              </Button>
+              <p className="text-xs text-gray-500 mt-2">为已有梦境记录生成焦虑指数</p>
+            </div>
+          )}
         </Card>
 
         {/* Theme cloud & breakdown */}

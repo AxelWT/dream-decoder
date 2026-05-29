@@ -46,3 +46,7 @@ export async function getThemeCloud(days = 30) {
 export async function getInsightStats() {
   return api.get<InsightStats>('/insights/stats');
 }
+
+export async function backfillAnxiety() {
+  return api.post<{ processed: number; total: number }>('/insights/backfill-anxiety');
+}

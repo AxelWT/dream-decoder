@@ -1,6 +1,7 @@
 import { Router, Response } from 'express';
 import { prisma } from '../index.js';
 import { authMiddleware, AuthRequest } from '../middleware/auth.js';
+import { scoreAnxiety } from '../services/deepseek.js';
 
 const router = Router();
 
@@ -175,6 +176,38 @@ router.get('/stats', async (req: AuthRequest, res: Response) => {
     });
   } catch (err: any) {
     res.status(400).json({ error: err.message || '获取统计数据失败' });
+  }
+});
+
+// POST /api/insights/backfill-anxiety
+router.post('/backfill-anxiety', async (req: AuthRequest, res: Response) => {
+  try {
+    const userId = req.userId!;
+
+    const dreams = await prisma.dream.findMany({
+      where: { userId, anxietyScore: null },
+      select: { id: true, content: true, emotions: true },
+    });
+
+    if (dreams.length === 0) {
+      return res.json({ processed: 0, message: '所有梦境已有焦虑指数' });
+    }
+
+    let processed = 0;
+    for (const dream of dreams) {
+      const score = await scoreAnxiety(dream.content, dream.emotions);
+      if (score !== null) {
+        await prisma.dream.update({
+          where: { id: dream.id },
+          data: { anxietyScore: score },
+        });
+        processed++;
+      }
+    }
+
+    res.json({ processed, total: dreams.length });
+  } catch (err: any) {
+    res.status(400).json({ error: err.message || '批量生成焦虑指数失败' });
   }
 });
 
