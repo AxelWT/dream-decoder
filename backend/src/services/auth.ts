@@ -2,6 +2,7 @@ import bcrypt from 'bcryptjs';
 import { prisma } from '../index.js';
 import { signToken } from '../utils/jwt.js';
 import { checkDailyBonus } from './credits.js';
+import { sendEmail } from './email.js';
 
 // In-memory verification code store (use Redis in production)
 const codeStore = new Map<string, { code: string; expiresAt: number }>();
@@ -62,9 +63,8 @@ export async function sendVerificationCode(email: string) {
     return { success: true, message: `验证码已发送（开发模式，查看控制台）` };
   }
 
-  // Send via email in production
-  const { sendEmail } = await import('./email.js');
-  await sendEmail({
+  // Send via email (non-blocking)
+  sendEmail({
     to: email,
     subject: '梦境解构师 - 验证码',
     html: buildEmailTemplate('邮箱验证码', `
@@ -80,7 +80,7 @@ export async function sendVerificationCode(email: string) {
         验证码 <span style="color:#f59e0b;font-weight:600;">5 分钟</span>内有效，请勿泄露给他人
       </div>
     `),
-  });
+  }).catch((err) => console.error('邮件发送失败:', err));
 
   return { success: true, message: '验证码已发送到您的邮箱' };
 }
@@ -181,7 +181,7 @@ export async function register(email: string, password: string, nickname: string
     throw new Error('该邮箱已注册');
   }
 
-  const passwordHash = await bcrypt.hash(password, 10);
+  const passwordHash = await bcrypt.hash(password, 8);
 
   const user = await prisma.user.create({
     data: {
@@ -224,8 +224,7 @@ export async function sendResetCode(email: string) {
     return { success: true, message: `重置码已发送（开发模式，查看控制台）` };
   }
 
-  const { sendEmail } = await import('./email.js');
-  await sendEmail({
+  sendEmail({
     to: email,
     subject: '梦境解构师 - 密码重置',
     html: buildEmailTemplate('密码重置', `
@@ -244,7 +243,7 @@ export async function sendResetCode(email: string) {
         如果这不是您的操作，请忽略此邮件，您的密码不会被更改
       </div>
     `),
-  });
+  }).catch((err) => console.error('邮件发送失败:', err));
 
   return { success: true, message: '如果该邮箱已注册，重置码将发送到您的邮箱' };
 }
@@ -267,7 +266,7 @@ export async function resetPassword(email: string, code: string, newPassword: st
 
   codeStore.delete(`reset:${email}`);
 
-  const passwordHash = await bcrypt.hash(newPassword, 10);
+  const passwordHash = await bcrypt.hash(newPassword, 8);
 
   const user = await prisma.user.update({
     where: { email },

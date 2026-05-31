@@ -31,7 +31,10 @@ export async function grantCredits(userId: string, amount: number): Promise<numb
 }
 
 export async function checkDailyBonus(userId: string): Promise<{ bonus: boolean; credits: number }> {
-  const user = await prisma.user.findUnique({ where: { id: userId } });
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { credits: true, plan: true, lastDailyBonus: true },
+  });
   if (!user) throw new Error('用户不存在');
 
   if (UNLIMITED_PLANS.includes(user.plan)) {
@@ -59,6 +62,7 @@ export async function checkDailyBonus(userId: string): Promise<{ bonus: boolean;
       credits: { increment: 1 },
       lastDailyBonus: now,
     },
+    select: { credits: true },
   });
 
   return { bonus: true, credits: updated.credits };
