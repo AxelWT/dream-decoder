@@ -41,15 +41,14 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Copy docker-compose.prod.yml to server
+      - name: Copy docker-compose.yml to server
         uses: appleboy/scp-action@v0.1.7
         with:
           host: ${{ secrets.ECS_HOST }}
           username: ${{ secrets.ECS_USERNAME }}
           key: ${{ secrets.ECS_SSH_KEY }}
-          source: deploy/docker-compose.prod.yml
+          source: docker-compose.yml
           target: ${{ secrets.ECS_DEPLOY_PATH }}
-          strip_components: 1
 
       - name: Deploy to server
         uses: appleboy/ssh-action@v1
@@ -80,6 +79,6 @@ jobs:
             PORT=${{ secrets.PORT }}
             ENV_EOF
             echo "${{ secrets.ACR_PASSWORD }}" | docker login ${{ secrets.ACR_REGISTRY }} -u ${{ secrets.ACR_USERNAME }} --password-stdin
-            docker compose -f docker-compose.prod.yml pull
-            docker compose -f docker-compose.prod.yml up -d --remove-orphans
+            docker compose pull
+            docker compose up -d --remove-orphans
             docker image prune -f
