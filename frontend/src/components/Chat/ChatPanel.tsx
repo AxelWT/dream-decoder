@@ -204,8 +204,8 @@ export function ChatPanel({ dreamId, sessionId }: ChatPanelProps) {
             </div>
           </div>
         ) : (
-          {/* 消息列表，使用 MessageBubble 组件渲染每条消息 */}
           <div className="max-w-3xl mx-auto space-y-4">
+            {/* 消息列表，使用 MessageBubble 组件渲染每条消息 */}
             {displayMessages.map((msg) => (
               <MessageBubble
                 key={msg.id}

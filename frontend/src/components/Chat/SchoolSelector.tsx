@@ -33,8 +33,8 @@ const schoolIcons: Record<PsychologySchool, string> = {
 
 export function SchoolSelector({ selected, onSelect }: SchoolSelectorProps) {
   return (
-    {/* 两列网格布局展示所有学派选项 */}
     <div className="grid grid-cols-2 gap-2">
+      {/* 两列网格布局展示所有学派选项 */}
       {schools.map((school) => (
         <motion.button
           key={school}
