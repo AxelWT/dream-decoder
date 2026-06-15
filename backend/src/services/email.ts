@@ -49,10 +49,15 @@ const transporter = nodemailer.createTransport({
  * @returns Nodemailer 发送结果
  */
 export async function sendEmail({ to, subject, html }: EmailOptions) {
-  await transporter.sendMail({
-    from: process.env.SMTP_FROM || process.env.SMTP_USER, // 发件人，默认同 SMTP 账号
-    to,       // 收件人
-    subject,  // 邮件主题
-    html,     // HTML 正文
-  });
+  try {
+    const info = await transporter.sendMail({
+      from: process.env.SMTP_FROM || process.env.SMTP_USER, // 发件人，默认同 SMTP 账号
+      to,       // 收件人
+      subject,  // 邮件主题
+      html,     // HTML 正文
+    });
+    console.log(`📧 邮件发送成功: to=${to}, messageId=${info.messageId}, response=${info.response}`);
+  } catch (err: any) {
+    console.error(`❌ 邮件发送失败: to=${to}, error=${err.code || err.message}`, err);
+  }
 }
