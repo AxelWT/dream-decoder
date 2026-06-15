@@ -1,3 +1,13 @@
+/**
+ * 个人档案页（Profile）
+ *
+ * 页面职责：展示和管理用户的个人信息、统计数据、背景档案和数据导出。
+ * 功能概述：
+ *   - 用户信息卡片（头像上传、昵称、邮箱、注册时间）
+ *   - 统计概览（梦境总数、本月记录、最常见情绪）
+ *   - 个人背景档案表单（供 AI 解梦参考）
+ *   - 数据导出（支持 JSON 和 CSV 格式）
+ */
 import { useEffect, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
 import { useAuthStore } from '../stores/authStore';
@@ -11,16 +21,25 @@ export function Profile() {
   const { user, fetchUser } = useAuthStore();
   const { fetchProfile, fetchStats, stats, isLoading } = useProfileStore();
   const { dreams, fetchDreams } = useDreamStore();
+  /** 头像文件输入 ref */
   const fileInputRef = useRef<HTMLInputElement>(null);
+  /** 头像上传中状态 */
   const [uploading, setUploading] = useState(false);
+  /** 数据导出中状态 */
   const [exporting, setExporting] = useState(false);
 
+  /* 页面初始化时加载个人档案、统计数据和梦境列表 */
   useEffect(() => {
     fetchProfile();
     fetchStats();
     fetchDreams();
   }, [fetchProfile, fetchStats, fetchDreams]);
 
+  /**
+   * 导出梦境数据
+   * 会先分页获取所有梦境（每页 50 条），然后按指定格式导出
+   * @param format - 导出格式：'json' 或 'csv'
+   */
   const handleExport = async (format: 'json' | 'csv') => {
     if (dreams.length === 0) {
       alert('暂无梦境数据可导出');
@@ -28,11 +47,11 @@ export function Profile() {
     }
     setExporting(true);
     try {
-      // Fetch all dreams (may need multiple pages)
       const { getDreams } = await import('../services/dreams');
       const allDreams: typeof dreams = [];
       let page = 1;
       let hasMore = true;
+      /* 分页获取全部梦境数据 */
       while (hasMore) {
         const result = await getDreams(page, 50);
         allDreams.push(...result.dreams);
@@ -52,15 +71,21 @@ export function Profile() {
     }
   };
 
+  /**
+   * 处理头像变更
+   * 验证文件类型和大小（不超过 2MB），读取为 DataURL 后上传
+   * @param e - 文件输入变更事件
+   */
   const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    // Validate file type and size
+    /* 验证文件类型：只允许图片 */
     if (!file.type.startsWith('image/')) {
       alert('请选择图片文件');
       return;
     }
+    /* 验证文件大小：不超过 2MB */
     if (file.size > 2 * 1024 * 1024) {
       alert('图片大小不能超过 2MB');
       return;
@@ -72,6 +97,7 @@ export function Profile() {
       reader.onload = async () => {
         try {
           await uploadAvatar(reader.result as string);
+          /* 上传成功后刷新用户信息 */
           await fetchUser();
         } catch (err: any) {
           alert(err.message || '上传头像失败');
@@ -91,13 +117,14 @@ export function Profile() {
 
   return (
     <div className="max-w-3xl mx-auto space-y-6">
-      {/* User Info Card */}
+      {/* 用户信息卡片：头像、昵称、邮箱、注册时间 */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         className="bg-night-800/50 rounded-2xl p-6 border border-night-700/50"
       >
         <div className="flex items-center gap-4">
+          {/* 头像区域：点击可上传新头像 */}
           <div
             className="relative w-16 h-16 rounded-2xl bg-gradient-to-br from-dream-purple to-dream-blue flex items-center justify-center text-2xl font-bold text-white overflow-hidden cursor-pointer group"
             onClick={() => fileInputRef.current?.click()}
@@ -107,17 +134,20 @@ export function Profile() {
             ) : (
               <span>{user?.nickname?.[0] || user?.email?.[0]?.toUpperCase() || '?'}</span>
             )}
+            {/* 悬停时显示相机图标 */}
             <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
               <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812-1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
               </svg>
             </div>
+            {/* 上传中遮罩 */}
             {uploading && (
               <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
                 <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
               </div>
             )}
+            {/* 隐藏的文件输入框 */}
             <input
               ref={fileInputRef}
               type="file"
@@ -126,6 +156,7 @@ export function Profile() {
               className="hidden"
             />
           </div>
+          {/* 用户基本信息 */}
           <div>
             <h2 className="text-xl font-semibold text-white">{user?.nickname || '用户'}</h2>
             <p className="text-sm text-gray-400">{user?.email}</p>
@@ -138,7 +169,7 @@ export function Profile() {
         </div>
       </motion.div>
 
-      {/* Stats Cards */}
+      {/* 统计卡片：梦境总数、本月记录、最常见情绪 */}
       {stats && (
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -163,7 +194,7 @@ export function Profile() {
         </motion.div>
       )}
 
-      {/* Background Form */}
+      {/* 个人背景档案表单 */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -180,7 +211,7 @@ export function Profile() {
         )}
       </motion.div>
 
-      {/* Data Export */}
+      {/* 数据导出区域：支持 JSON 和 CSV 格式 */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -192,6 +223,7 @@ export function Profile() {
           导出你的所有梦境记录，支持 JSON 和 CSV 格式。
         </p>
         <div className="flex gap-3">
+          {/* 导出为 JSON */}
           <button
             onClick={() => handleExport('json')}
             disabled={exporting}
@@ -199,6 +231,7 @@ export function Profile() {
           >
             {exporting ? '导出中...' : '导出 JSON'}
           </button>
+          {/* 导出为 CSV */}
           <button
             onClick={() => handleExport('csv')}
             disabled={exporting}

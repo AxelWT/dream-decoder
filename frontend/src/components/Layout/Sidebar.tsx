@@ -1,8 +1,19 @@
+/**
+ * Sidebar - 侧边导航栏组件
+ * 
+ * 职责：
+ * - 提供应用主要功能的导航入口（首页、记录、解构、时间线等）
+ * - 显示应用 Logo 和品牌信息
+ * - 展示用户积分信息，免费用户显示升级入口
+ * - 显示当前登录用户信息及退出登录按钮
+ * - 支持移动端抽屉式弹出和桌面端固定展示两种模式
+ */
 import { NavLink, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useAuthStore } from '../../stores/authStore';
 import { CreditsBadge } from '../UI/CreditsBadge';
 
+/** 侧边栏导航项配置，定义每个导航项的路径、标签和图标 */
 const navItems = [
   {
     path: '/',
@@ -69,15 +80,24 @@ const navItems = [
   },
 ];
 
+/** Sidebar 组件的 Props 接口定义 */
 interface SidebarProps {
+  /** 侧边栏是否展开（移动端控制显隐） */
   isOpen: boolean;
+  /** 关闭侧边栏的回调函数 */
   onClose: () => void;
 }
 
 export function Sidebar({ isOpen, onClose }: SidebarProps) {
+  /** 从认证状态管理中获取当前用户信息和退出登录方法 */
   const { user, logout } = useAuthStore();
+  /** 路由导航实例，用于退出登录后跳转到登录页 */
   const navigate = useNavigate();
 
+  /**
+   * 处理退出登录
+   * 清除用户登录状态并跳转到登录页面
+   */
   const handleLogout = () => {
     logout();
     navigate('/login');
@@ -85,7 +105,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
 
   return (
     <>
-      {/* Mobile overlay */}
+      {/* 移动端遮罩层，点击可关闭侧边栏 */}
       {isOpen && (
         <motion.div
           initial={{ opacity: 0 }}
@@ -96,20 +116,22 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
         />
       )}
 
-      {/* Sidebar */}
+      {/* 侧边栏主体，使用 framer-motion 实现滑入滑出动画 */}
       <motion.aside
         initial={false}
         animate={{ x: isOpen ? 0 : -280 }}
         className="fixed left-0 top-0 bottom-0 w-[280px] bg-night-900/95 backdrop-blur-xl border-r border-night-700/50 z-50 flex flex-col lg:!translate-x-0 lg:static lg:z-auto"
       >
-        {/* Logo */}
+        {/* Logo 和品牌区域 */}
         <div className="p-6 border-b border-night-700/50">
           <div className="flex items-center gap-3">
+            {/* 应用图标，渐变紫色到蓝色 + 发光效果 */}
             <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-dream-purple to-dream-blue flex items-center justify-center glow-purple">
               <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
               </svg>
             </div>
+            {/* 品牌名称 */}
             <div>
               <h1 className="text-lg font-semibold text-white">梦境解构师</h1>
               <p className="text-xs text-gray-500">Dream Decoder</p>
@@ -117,7 +139,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
           </div>
         </div>
 
-        {/* Navigation */}
+        {/* 导航链接列表 */}
         <nav className="flex-1 p-4 space-y-1">
           {navItems.map((item) => (
             <NavLink
@@ -139,9 +161,11 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
           ))}
         </nav>
 
-        {/* Credits & Upgrade */}
+        {/* 积分展示和升级入口 */}
         <div className="px-4 pb-2 space-y-2">
+          {/* 积分徽章组件 */}
           <CreditsBadge />
+          {/* 免费用户显示升级订阅入口 */}
           {user?.plan === 'FREE' && (
             <NavLink
               to="/pricing"
@@ -156,9 +180,11 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
           )}
         </div>
 
-        {/* User info */}
+        {/* 用户信息区域 */}
         <div className="p-4 border-t border-night-700/50">
+          {/* 用户头像和基本信息 */}
           <div className="flex items-center gap-3 mb-3">
+            {/* 用户头像，取昵称或邮箱首字母作为占位符 */}
             <div className="w-8 h-8 rounded-lg bg-night-700 flex items-center justify-center text-sm font-medium text-dream-purple">
               {user?.nickname?.[0] || user?.email?.[0]?.toUpperCase() || '?'}
             </div>
@@ -169,6 +195,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
               <p className="text-xs text-gray-500 truncate">{user?.email}</p>
             </div>
           </div>
+          {/* 退出登录按钮 */}
           <button
             onClick={handleLogout}
             className="w-full flex items-center gap-2 px-4 py-2 text-sm text-gray-400 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-colors"

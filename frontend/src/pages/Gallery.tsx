@@ -1,3 +1,14 @@
+/**
+ * 梦境画廊页（Gallery）
+ *
+ * 页面职责：以视觉卡片形式展示用户生成的梦境卡片，支持浏览、预览和删除操作。
+ * 功能概述：
+ *   - 网格布局展示梦境视觉卡片（响应式 2/3/4 列）
+ *   - 点击卡片弹出模态框查看大图详情
+ *   - 模态框支持跳转到对应梦境详情、删除卡片
+ *   - 分页浏览（上一页 / 下一页）
+ *   - 空状态引导用户去记录梦境
+ */
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -8,15 +19,24 @@ import { getCards, deleteCard, type DreamCard, type PaginatedCards } from '../se
 
 export function Gallery() {
   const navigate = useNavigate();
+  /** 分页卡片数据 */
   const [data, setData] = useState<PaginatedCards | null>(null);
+  /** 页面加载状态 */
   const [loading, setLoading] = useState(true);
+  /** 当前选中的卡片（用于模态框展示） */
   const [selectedCard, setSelectedCard] = useState<DreamCard | null>(null);
+  /** 当前页码 */
   const [page, setPage] = useState(1);
 
+  /* 页面加载时获取第一页卡片 */
   useEffect(() => {
     loadCards(1);
   }, []);
 
+  /**
+   * 加载指定页码的卡片数据
+   * @param p - 页码
+   */
   async function loadCards(p: number) {
     try {
       const result = await getCards(p);
@@ -29,6 +49,11 @@ export function Gallery() {
     }
   }
 
+  /**
+   * 删除指定卡片
+   * 删除后从列表中移除该卡片，若当前预览的正是该卡片则关闭预览
+   * @param id - 卡片 ID
+   */
   async function handleDelete(id: string) {
     try {
       await deleteCard(id);
@@ -43,6 +68,7 @@ export function Gallery() {
     }
   }
 
+  /* 加载状态展示 */
   if (loading) {
     return (
       <div className="flex items-center justify-center h-full">
@@ -56,6 +82,7 @@ export function Gallery() {
   return (
     <div className="p-4 lg:p-6 max-w-5xl mx-auto">
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
+        {/* 页面标题和卡片统计 */}
         <div className="flex items-center justify-between mb-6">
           <div>
             <h1 className="text-2xl font-bold text-white mb-1">梦境画廊</h1>
@@ -65,6 +92,7 @@ export function Gallery() {
           </div>
         </div>
 
+        {/* 无卡片时的空状态引导 */}
         {cards.length === 0 ? (
           <Card className="text-center py-16">
             <div className="w-16 h-16 mx-auto rounded-full bg-night-700 flex items-center justify-center mb-4">
@@ -78,6 +106,7 @@ export function Gallery() {
           </Card>
         ) : (
           <>
+            {/* 卡片网格：响应式 2/3/4 列布局 */}
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
               {cards.map((card, i) => (
                 <motion.div
@@ -90,6 +119,7 @@ export function Gallery() {
                 >
                   <div className="relative">
                     <DreamCardVisual card={card} compact />
+                    {/* 悬停遮罩，显示"查看详情" */}
                     <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors rounded-2xl flex items-center justify-center">
                       <span className="text-white opacity-0 group-hover:opacity-100 transition-opacity text-sm font-medium">
                         查看详情
@@ -100,6 +130,7 @@ export function Gallery() {
               ))}
             </div>
 
+            {/* 分页控件：上一页 / 下一页 */}
             {data && data.totalPages > 1 && (
               <div className="mt-6 flex justify-center gap-2">
                 <Button
@@ -127,7 +158,7 @@ export function Gallery() {
         )}
       </motion.div>
 
-      {/* Card detail modal */}
+      {/* 卡片详情模态框：点击卡片后展示大图和操作按钮 */}
       <AnimatePresence>
         {selectedCard && (
           <motion.div
@@ -144,8 +175,11 @@ export function Gallery() {
               className="w-full max-w-md"
               onClick={(e) => e.stopPropagation()}
             >
+              {/* 卡片大图渲染 */}
               <DreamCardVisual card={selectedCard} />
+              {/* 操作按钮区域 */}
               <div className="flex gap-2 mt-4">
+                {/* 关闭按钮 */}
                 <Button
                   variant="secondary"
                   className="flex-1"
@@ -153,6 +187,7 @@ export function Gallery() {
                 >
                   关闭
                 </Button>
+                {/* 跳转到对应梦境详情（仅当卡片关联了梦境时显示） */}
                 {selectedCard.dream && (
                   <Button
                     variant="secondary"
@@ -165,6 +200,7 @@ export function Gallery() {
                     查看梦境
                   </Button>
                 )}
+                {/* 删除卡片按钮 */}
                 <Button
                   variant="ghost"
                   className="text-red-400 hover:text-red-300"

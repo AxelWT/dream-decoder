@@ -1,3 +1,14 @@
+/**
+ * AI 解构页（Analyze）
+ *
+ * 页面职责：提供 AI 对话式梦境分析界面，左侧为可折叠的对话历史侧边栏，右侧为聊天面板。
+ * 功能概述：
+ *   - 可折叠的侧边栏：收起时显示图标快捷入口，展开时显示完整对话历史
+ *   - 支持从梦境详情页跳转进来（携带 dreamId），对特定梦境进行分析
+ *   - 侧边栏包含：新建对话、选择梦境记录、正在解构的梦境信息、历史会话列表
+ *   - 支持删除历史会话
+ *   - 主区域渲染 ChatPanel 组件进行 AI 对话
+ */
 import { useEffect, useState } from 'react';
 import { useParams, useSearchParams } from 'react-router-dom';
 import { ChatPanel } from '../components/Chat/ChatPanel';
@@ -8,29 +19,34 @@ import { useNavigate } from 'react-router-dom';
 import { SCHOOL_LABELS } from '../types';
 
 export function Analyze() {
+  /** URL 中的会话 ID（进入历史对话时存在） */
   const { sessionId } = useParams<{ sessionId: string }>();
   const [searchParams] = useSearchParams();
+  /** URL 参数中的梦境 ID，用于对指定梦境发起分析 */
   const dreamId = searchParams.get('dreamId') || undefined;
   const navigate = useNavigate();
 
   const { sessions, fetchSessions, removeSession } = useChatStore();
   const { dreams, fetchDreams } = useDreamStore();
+  /** 侧边栏展开/收起状态 */
   const [showHistory, setShowHistory] = useState(false);
 
+  /* 页面加载时获取会话列表和梦境数据 */
   useEffect(() => {
     fetchSessions();
     fetchDreams(1);
   }, []);
 
+  /* 根据 dreamId 查找对应的梦境对象 */
   const dream = dreams.find((d) => d.id === dreamId);
 
   return (
     <div className="flex h-[calc(100vh-57px)]">
-      {/* Sidebar - collapsible on all screen sizes */}
+      {/* 侧边栏：可折叠，包含对话历史和快捷操作 */}
       <div className={`
         ${showHistory ? 'w-72' : 'w-12'} transition-all duration-300 border-r border-night-700/50 bg-night-900/50 flex flex-col
       `}>
-        {/* Toggle button */}
+        {/* 展开/收起切换按钮 */}
         <button
           onClick={() => setShowHistory(!showHistory)}
           className="p-3 text-gray-400 hover:text-white transition-colors border-b border-night-700/50 flex items-center justify-center"
@@ -45,10 +61,10 @@ export function Analyze() {
           </svg>
         </button>
 
-        {/* Collapsed icon bar */}
+        {/* 收起状态：图标快捷入口 */}
         {!showHistory && (
           <div className="flex flex-col items-center gap-2 py-3">
-            {/* New chat button */}
+            {/* 新建对话按钮 */}
             <button
               onClick={() => {
                 navigate('/analyze');
@@ -62,7 +78,7 @@ export function Analyze() {
               </svg>
             </button>
 
-            {/* Dream list quick entry */}
+            {/* 梦境记录快捷入口 */}
             <button
               onClick={() => navigate('/dreams')}
               className="w-8 h-8 rounded-lg hover:bg-night-800/50 flex items-center justify-center transition-colors"
@@ -73,7 +89,7 @@ export function Analyze() {
               </svg>
             </button>
 
-            {/* Recent sessions icons */}
+            {/* 最近 5 个会话的图标快捷入口 */}
             {sessions.slice(0, 5).map((session) => (
               <button
                 key={session.id}
@@ -92,7 +108,7 @@ export function Analyze() {
           </div>
         )}
 
-        {/* Expanded sidebar content */}
+        {/* 展开状态：完整的对话历史列表 */}
         {showHistory && (
           <div className="flex-1 overflow-y-auto p-4 space-y-4">
             <div className="flex items-center justify-between">
@@ -109,7 +125,7 @@ export function Analyze() {
               </Button>
             </div>
 
-            {/* Dream selection quick entry */}
+            {/* 选择梦境记录的快捷入口 */}
             <button
               onClick={() => navigate('/dreams')}
               className="w-full p-3 rounded-xl border border-dashed border-night-600 hover:border-dream-cyan/40 hover:bg-night-800/30 transition-all text-left group"
@@ -122,6 +138,7 @@ export function Analyze() {
               </div>
             </button>
 
+            {/* 当前正在解构的梦境信息卡片 */}
             {dreamId && dream && (
               <div className="p-3 bg-dream-purple/10 border border-dream-purple/20 rounded-xl">
                 <p className="text-xs text-dream-purple mb-1">正在解构</p>
@@ -131,6 +148,7 @@ export function Analyze() {
               </div>
             )}
 
+            {/* 会话历史列表 */}
             <div className="space-y-2 max-h-[calc(100vh-300px)] overflow-y-auto">
               {sessions.map((session) => (
                 <div
@@ -148,6 +166,7 @@ export function Analyze() {
                     <p className="text-sm text-white truncate flex-1">
                       {session.title || '对话'}
                     </p>
+                    {/* 删除会话按钮，悬停时显示 */}
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
@@ -160,6 +179,7 @@ export function Analyze() {
                       </svg>
                     </button>
                   </div>
+                  {/* 会话日期和分析学派标签 */}
                   <div className="flex items-center gap-2 mt-1">
                     <span className="text-xs text-gray-500">
                       {new Date(session.updatedAt).toLocaleDateString('zh-CN')}
@@ -171,6 +191,7 @@ export function Analyze() {
                 </div>
               ))}
 
+              {/* 无会话时的空状态 */}
               {sessions.length === 0 && (
                 <p className="text-sm text-gray-500 text-center py-4">暂无对话</p>
               )}
@@ -179,7 +200,7 @@ export function Analyze() {
         )}
       </div>
 
-      {/* Main chat area */}
+      {/* 主聊天区域：渲染 ChatPanel 组件 */}
       <div className="flex-1 flex flex-col min-w-0">
         <ChatPanel dreamId={dreamId} sessionId={sessionId} />
       </div>

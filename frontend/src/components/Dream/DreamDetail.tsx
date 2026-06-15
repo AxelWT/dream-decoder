@@ -1,3 +1,8 @@
+/**
+ * @file DreamDetail.tsx
+ * @description 梦境详情页面组件，展示单个梦境的完整信息，支持编辑、删除、AI 解构、
+ *              生成梦境卡片等功能。包含编辑模式切换和卡片生成器的交互逻辑。
+ */
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -13,14 +18,23 @@ import type { DreamCard } from '../../services/cards';
 import type { Clarity, DreamType } from '../../types';
 
 export function DreamDetail() {
+  // 从路由参数获取梦境 ID
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { currentDream, fetchDream, removeDream, editDream, clearCurrent, isLoading } = useDreamStore();
+
+  // 是否正在删除中
   const [deleting, setDeleting] = useState(false);
+  // 是否显示卡片生成器
   const [showCardGenerator, setShowCardGenerator] = useState(false);
+  // 已生成的梦境卡片数据
   const [generatedCard, setGeneratedCard] = useState<DreamCard | null>(null);
+  // 是否处于编辑模式
   const [editing, setEditing] = useState(false);
+  // 是否正在保存编辑
   const [saving, setSaving] = useState(false);
+
+  // 编辑表单的状态变量
   const [editTitle, setEditTitle] = useState('');
   const [editContent, setEditContent] = useState('');
   const [editEmotions, setEditEmotions] = useState<string[]>([]);
@@ -28,11 +42,13 @@ export function DreamDetail() {
   const [editDreamType, setEditDreamType] = useState<DreamType | undefined>();
   const [editScenes, setEditScenes] = useState<string[]>([]);
 
+  // 根据 ID 加载梦境数据，组件卸载时清除当前梦境
   useEffect(() => {
     if (id) fetchDream(id);
     return () => clearCurrent();
   }, [id]);
 
+  /** 删除梦境处理：确认后删除并跳转到时间线页 */
   const handleDelete = async () => {
     if (!id) return;
     if (!confirm('确定要删除这个梦境记录吗？')) return;
@@ -45,6 +61,7 @@ export function DreamDetail() {
     }
   };
 
+  /** 进入编辑模式：将当前梦境数据填充到编辑表单 */
   const startEdit = () => {
     if (!currentDream) return;
     setEditTitle(currentDream.title || '');
@@ -56,6 +73,7 @@ export function DreamDetail() {
     setEditing(true);
   };
 
+  /** 保存编辑：将修改后的数据提交到后端 */
   const handleSave = async () => {
     if (!id || !editContent.trim()) return;
     setSaving(true);
@@ -76,6 +94,7 @@ export function DreamDetail() {
     }
   };
 
+  // 加载中或数据未就绪时显示加载提示
   if (isLoading || !currentDream) {
     return (
       <div className="p-6 flex items-center justify-center min-h-[400px]">
@@ -88,7 +107,7 @@ export function DreamDetail() {
 
   return (
     <div className="p-4 lg:p-6 max-w-3xl mx-auto space-y-6">
-      {/* Back button */}
+      {/* 返回按钮 */}
       <button
         onClick={() => navigate(-1)}
         className="flex items-center gap-2 text-gray-400 hover:text-white transition-colors"
@@ -99,7 +118,7 @@ export function DreamDetail() {
         返回
       </button>
 
-      {/* Header */}
+      {/* 梦境头部信息卡片 */}
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
         <Card>
           <div className="flex items-start justify-between mb-4">
@@ -111,6 +130,7 @@ export function DreamDetail() {
                 {new Date(dream.recordedAt).toLocaleString('zh-CN')}
               </p>
             </div>
+            {/* 操作按钮区域（非编辑模式下显示） */}
             <div className="flex gap-2">
               {!editing && (
                 <>
@@ -138,7 +158,7 @@ export function DreamDetail() {
           </div>
 
           {editing ? (
-            /* Edit Form */
+            /* 编辑表单 */
             <div className="space-y-4">
               <Input
                 label="梦境标题"
@@ -154,6 +174,7 @@ export function DreamDetail() {
                 rows={6}
                 required
               />
+              {/* 情绪标签编辑 */}
               <div className="space-y-2">
                 <label className="block text-sm font-medium text-gray-300">情绪标签</label>
                 <div className="flex flex-wrap gap-2">
@@ -173,6 +194,7 @@ export function DreamDetail() {
                   ))}
                 </div>
               </div>
+              {/* 清晰度编辑 */}
               <div className="space-y-2">
                 <label className="block text-sm font-medium text-gray-300">梦境清晰度</label>
                 <div className="flex flex-wrap gap-2">
@@ -187,6 +209,7 @@ export function DreamDetail() {
                   ))}
                 </div>
               </div>
+              {/* 梦境类型编辑 */}
               <div className="space-y-2">
                 <label className="block text-sm font-medium text-gray-300">梦境类型</label>
                 <div className="flex flex-wrap gap-2">
@@ -201,6 +224,7 @@ export function DreamDetail() {
                   ))}
                 </div>
               </div>
+              {/* 场景标签编辑 */}
               <div className="space-y-2">
                 <label className="block text-sm font-medium text-gray-300">场景标签</label>
                 <div className="flex flex-wrap gap-2">
@@ -220,6 +244,7 @@ export function DreamDetail() {
                   ))}
                 </div>
               </div>
+              {/* 保存/取消按钮 */}
               <div className="flex gap-2 pt-2">
                 <Button size="sm" onClick={handleSave} isLoading={saving}>
                   保存
@@ -231,7 +256,7 @@ export function DreamDetail() {
             </div>
           ) : (
             <>
-              {/* Tags */}
+              {/* 标签展示区 */}
               <div className="flex flex-wrap gap-2 mb-6">
                 {dream.emotions.map((emotion) => (
                   <Tag key={emotion} label={emotion} variant="emotion" size="md" />
@@ -247,14 +272,14 @@ export function DreamDetail() {
                 ))}
               </div>
 
-              {/* Content */}
+              {/* 梦境内容展示 */}
               <div className="prose prose-invert max-w-none">
                 <p className="text-gray-200 leading-relaxed whitespace-pre-wrap">
                   {dream.content}
                 </p>
               </div>
 
-              {/* AI Summary */}
+              {/* AI 摘要展示（如有） */}
               {dream.aiSummary && (
                 <div className="mt-6 p-4 bg-dream-purple/10 border border-dream-purple/20 rounded-xl">
                   <h3 className="text-sm font-medium text-dream-purple mb-2">AI 摘要</h3>
@@ -266,10 +291,11 @@ export function DreamDetail() {
         </Card>
       </motion.div>
 
-      {/* Visual Card Section */}
+      {/* 梦境卡片生成与展示区域 */}
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }}>
         <div className="flex items-center justify-between mb-3">
           <h2 className="text-lg font-semibold text-white">梦境卡片</h2>
+          {/* 未生成卡片时显示"生成卡片"按钮 */}
           {!showCardGenerator && !generatedCard && (
             <Button
               variant="secondary"
@@ -282,6 +308,7 @@ export function DreamDetail() {
         </div>
 
         <AnimatePresence mode="wait">
+          {/* 卡片生成器 */}
           {showCardGenerator && !generatedCard && (
             <motion.div
               key="generator"
@@ -310,6 +337,7 @@ export function DreamDetail() {
             </motion.div>
           )}
 
+          {/* 已生成的卡片展示 */}
           {generatedCard && (
             <motion.div
               key="card"
@@ -342,7 +370,7 @@ export function DreamDetail() {
         </AnimatePresence>
       </motion.div>
 
-      {/* Chat sessions */}
+      {/* 关联的 AI 解构对话列表 */}
       {dream.sessions && dream.sessions.length > 0 && (
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
           <h2 className="text-lg font-semibold text-white mb-3">解构对话</h2>
@@ -360,6 +388,7 @@ export function DreamDetail() {
                       {new Date(session.createdAt).toLocaleString('zh-CN')}
                     </p>
                   </div>
+                  {/* 心理学派标签 */}
                   <span className="text-xs px-2 py-1 rounded-md bg-dream-cyan/10 text-dream-cyan">
                     {session.school}
                   </span>

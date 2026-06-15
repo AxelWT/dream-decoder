@@ -1,3 +1,14 @@
+/**
+ * 订阅定价页（Pricing）
+ *
+ * 页面职责：展示订阅计划列表，处理支付订单创建和微信扫码支付流程。
+ * 功能概述：
+ *   - 展示所有订阅计划（免费、专业版、高级版、终身版）
+ *   - 每个计划卡片显示价格、功能列表和升级按钮
+ *   - 点击升级后创建支付订单，弹出微信支付二维码
+ *   - 轮询订单支付状态，支付成功后自动跳转
+ *   - 标识当前计划
+ */
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -5,6 +16,7 @@ import { useAuthStore } from '../stores/authStore';
 import { getPlans, createOrder, getOrderStatus } from '../services/payjs';
 import type { Plan } from '../types';
 
+/** 各计划的样式配置：渐变色和角标文案 */
 const planStyles: Record<string, { gradient: string; badge?: string }> = {
   FREE: { gradient: 'from-night-800 to-night-700' },
   PRO: { gradient: 'from-dream-purple/20 to-dream-blue/20', badge: '热门' },
@@ -15,20 +27,29 @@ const planStyles: Record<string, { gradient: string; badge?: string }> = {
 export function Pricing() {
   const { user, isAuthenticated, fetchUser } = useAuthStore();
   const navigate = useNavigate();
+  /** 计划列表数据 */
   const [plans, setPlans] = useState<Plan[]>([]);
+  /** 当前正在创建订单的计划 ID */
   const [loading, setLoading] = useState<string | null>(null);
+  /** 支付二维码弹窗显示状态 */
   const [showModal, setShowModal] = useState(false);
+  /** 微信支付二维码图片 URL */
   const [qrCode, setQrCode] = useState<string | null>(null);
+  /** 当前订单 ID */
   const [currentOrderId, setCurrentOrderId] = useState<string | null>(null);
+  /** 当前选择的计划 ID */
   const [currentPlan, setCurrentPlan] = useState<string | null>(null);
+  /** 订单轮询状态：polling=轮询中, paid=已支付, error=出错 */
   const [pollStatus, setPollStatus] = useState<'polling' | 'paid' | 'error' | null>(null);
+  /** 轮询定时器引用 */
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
+  /* 页面加载时获取订阅计划列表 */
   useEffect(() => {
     getPlans().then(setPlans).catch(console.error);
   }, []);
 
-  // Poll for order status when modal is open
+  /* 订单状态轮询：弹窗打开且状态为 polling 时，每 2 秒查询一次订单状态 */
   useEffect(() => {
     if (!showModal || !currentOrderId || pollStatus !== 'polling') return;
 
@@ -36,17 +57,17 @@ export function Pricing() {
       try {
         const result = await getOrderStatus(currentOrderId);
         if (result.status === 'paid') {
+          /* 支付成功：停止轮询，刷新用户信息，延迟跳转到成功页 */
           setPollStatus('paid');
           if (pollRef.current) clearInterval(pollRef.current);
           await fetchUser();
-          // Navigate to success page after a short delay
           setTimeout(() => {
             setShowModal(false);
             navigate(`/payment-success?order_id=${currentOrderId}`);
           }, 1500);
         }
       } catch {
-        // Ignore polling errors, keep trying
+        /* 忽略轮询错误，继续重试 */
       }
     }, 2000);
 
@@ -55,6 +76,11 @@ export function Pricing() {
     };
   }, [showModal, currentOrderId, pollStatus, fetchUser, navigate]);
 
+  /**
+   * 处理升级计划
+   * 未登录跳转登录页，免费计划无需操作，否则创建支付订单并弹出二维码
+   * @param plan - 选定的订阅计划
+   */
   const handleUpgrade = async (plan: Plan) => {
     if (!isAuthenticated) {
       navigate('/login');
@@ -65,6 +91,7 @@ export function Pricing() {
 
     try {
       setLoading(plan.id);
+      /* 调用支付服务创建订单，获取二维码 */
       const { qrcode, orderId } = await createOrder(plan.id);
       setQrCode(qrcode);
       setCurrentOrderId(orderId);
@@ -78,6 +105,7 @@ export function Pricing() {
     }
   };
 
+  /** 关闭支付弹窗并清理状态 */
   const handleCloseModal = () => {
     setShowModal(false);
     setQrCode(null);
@@ -90,16 +118,17 @@ export function Pricing() {
   return (
     <div className="min-h-screen bg-night-950 py-12 px-4">
       <div className="max-w-5xl mx-auto">
-        {/* Header */}
+        {/* 页面标题和描述 */}
         <div className="text-center mb-12">
           <h1 className="text-3xl font-bold text-white mb-3">选择你的梦境探索计划</h1>
           <p className="text-gray-400">解锁更深层的梦境解读与无限 AI 解构</p>
         </div>
 
-        {/* Plan cards */}
+        {/* 计划卡片网格：四列响应式布局 */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           {plans.map((plan, index) => {
             const style = planStyles[plan.id] || planStyles.FREE;
+            /* 是否为用户当前订阅计划 */
             const isCurrent = user?.plan === plan.id;
 
             return (
@@ -114,21 +143,21 @@ export function Pricing() {
                     : 'border-night-700/50'
                 } p-6 flex flex-col`}
               >
-                {/* Badge */}
+                {/* 角标：热门/推荐 */}
                 {style.badge && (
                   <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-0.5 rounded-full bg-dream-purple text-xs font-medium text-white">
                     {style.badge}
                   </div>
                 )}
 
-                {/* Current indicator */}
+                {/* 当前计划标识 */}
                 {isCurrent && (
                   <div className="absolute top-4 right-4 text-xs text-dream-purple font-medium">
                     当前
                   </div>
                 )}
 
-                {/* Plan info */}
+                {/* 计划名称和价格 */}
                 <h3 className="text-lg font-semibold text-white mb-1">{plan.name}</h3>
                 <div className="mb-4">
                   <span className="text-3xl font-bold text-white">
@@ -141,7 +170,7 @@ export function Pricing() {
                   )}
                 </div>
 
-                {/* Features */}
+                {/* 功能列表 */}
                 <ul className="space-y-2 mb-6 flex-1">
                   {plan.features.map((feature) => (
                     <li key={feature} className="flex items-start gap-2 text-sm text-gray-300">
@@ -153,7 +182,7 @@ export function Pricing() {
                   ))}
                 </ul>
 
-                {/* CTA button */}
+                {/* 升级按钮：当前计划或免费计划不可点击 */}
                 <button
                   onClick={() => handleUpgrade(plan)}
                   disabled={isCurrent || loading === plan.id}
@@ -173,7 +202,7 @@ export function Pricing() {
         </div>
       </div>
 
-      {/* Payment QR Code Modal */}
+      {/* 微信支付二维码弹窗 */}
       <AnimatePresence>
         {showModal && (
           <motion.div
@@ -190,6 +219,7 @@ export function Pricing() {
               className="bg-night-800 rounded-2xl border border-night-600 p-8 max-w-sm w-full text-center"
               onClick={(e) => e.stopPropagation()}
             >
+              {/* 支付成功状态展示 */}
               {pollStatus === 'paid' ? (
                 <>
                   <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-emerald-500/20 flex items-center justify-center">
@@ -207,7 +237,7 @@ export function Pricing() {
                     请使用微信扫描下方二维码完成支付
                   </p>
 
-                  {/* QR Code */}
+                  {/* 二维码图片 */}
                   {qrCode && (
                     <div className="bg-white rounded-xl p-4 inline-block mb-4">
                       <img src={qrCode} alt="支付二维码" className="w-48 h-48" />
@@ -218,6 +248,7 @@ export function Pricing() {
                     支付完成后页面将自动跳转
                   </p>
 
+                  {/* 取消支付按钮 */}
                   <button
                     onClick={handleCloseModal}
                     className="text-gray-400 hover:text-white text-sm transition-colors"

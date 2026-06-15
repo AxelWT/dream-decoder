@@ -1,3 +1,13 @@
+/**
+ * 首页（Home）
+ *
+ * 页面职责：应用的主入口页面，展示欢迎信息、快捷操作入口和最近的梦境记录列表。
+ * 功能概述：
+ *   - 显示个性化欢迎语（基于用户昵称）
+ *   - 提供三个快捷操作卡片：记录梦境、AI 解构、梦境时间线
+ *   - 展示最近 3 条梦境记录，支持点击跳转详情
+ *   - 无梦境时显示空状态引导
+ */
 import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
@@ -11,12 +21,15 @@ export function Home() {
   const { dreams, fetchDreams } = useDreamStore();
   const { user } = useAuthStore();
 
+  /* 页面加载时获取第一页梦境数据 */
   useEffect(() => {
     fetchDreams(1);
   }, []);
 
+  /* 取最近 3 条梦境用于展示 */
   const recentDreams = dreams.slice(0, 3);
 
+  /* 快捷操作配置：标题、描述、图标、跳转路径、渐变色 */
   const quickActions = [
     {
       title: '记录梦境',
@@ -55,7 +68,7 @@ export function Home() {
 
   return (
     <div className="p-4 lg:p-6 max-w-5xl mx-auto space-y-8">
-      {/* Welcome */}
+      {/* 欢迎区域：显示用户昵称和引导语 */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -67,7 +80,7 @@ export function Home() {
         <p className="text-gray-400 text-lg">今晚的梦境，等待你的记录与探索</p>
       </motion.div>
 
-      {/* Quick actions */}
+      {/* 快捷操作卡片区域：三列布局展示记录、解构、时间线入口 */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         {quickActions.map((action, index) => (
           <motion.div
@@ -87,7 +100,7 @@ export function Home() {
         ))}
       </div>
 
-      {/* Recent dreams */}
+      {/* 最近梦境区域：展示最近 3 条梦境，或空状态引导 */}
       <div>
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-xl font-semibold text-white">最近的梦境</h2>
@@ -98,6 +111,7 @@ export function Home() {
           )}
         </div>
 
+        {/* 无梦境时的空状态提示 */}
         {recentDreams.length === 0 ? (
           <Card className="text-center py-12">
             <div className="w-16 h-16 mx-auto rounded-full bg-night-700 flex items-center justify-center mb-4">
@@ -109,6 +123,7 @@ export function Home() {
             <Button onClick={() => navigate('/record')}>记录第一个梦</Button>
           </Card>
         ) : (
+          /* 有梦境时展示列表，每项包含标题、内容摘要、情绪标签和日期 */
           <div className="space-y-3">
             {recentDreams.map((dream, index) => (
               <motion.div
@@ -126,6 +141,7 @@ export function Home() {
                       <p className="text-sm text-gray-400 mt-1 line-clamp-2">
                         {dream.content}
                       </p>
+                      {/* 情绪标签，最多展示 3 个 */}
                       <div className="flex flex-wrap gap-2 mt-3">
                         {dream.emotions.slice(0, 3).map((emotion) => (
                           <span
@@ -137,6 +153,7 @@ export function Home() {
                         ))}
                       </div>
                     </div>
+                    {/* 记录日期 */}
                     <span className="text-xs text-gray-500 ml-4 whitespace-nowrap">
                       {new Date(dream.recordedAt).toLocaleDateString('zh-CN')}
                     </span>

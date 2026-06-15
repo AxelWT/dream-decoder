@@ -1,11 +1,21 @@
+/**
+ * @file StatsCards.tsx
+ * @description 数据统计卡片组件集，包含：
+ *   - StatsCards：概览统计卡片（总梦境数、本月/本周记录、平均焦虑）
+ *   - DreamTypeDistribution：梦境类型分布（带进度条）
+ *   - TopEmotions：高频情绪 TOP5（带进度条）
+ */
 import type { InsightStats } from '../../services/insights';
 import { DREAM_TYPE_LABELS } from '../../types';
 
+/** 通用 Props，接收统计数据 */
 interface Props {
   stats: InsightStats;
 }
 
+/** 概览统计卡片组件 */
 export function StatsCards({ stats }: Props) {
+  // 四个统计卡片配置
   const cards = [
     {
       label: '总梦境数',
@@ -54,12 +64,15 @@ export function StatsCards({ stats }: Props) {
     <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
       {cards.map((card) => (
         <div key={card.label} className="glass-card p-4">
+          {/* 渐变图标 */}
           <div className={`w-9 h-9 rounded-lg bg-gradient-to-br ${card.gradient} flex items-center justify-center text-white mb-3`}>
             {card.icon}
           </div>
+          {/* 数值 */}
           <p className="text-2xl font-bold text-white">
             {card.value}{card.suffix ?? ''}
           </p>
+          {/* 标签 */}
           <p className="text-xs text-gray-400 mt-1">{card.label}</p>
         </div>
       ))}
@@ -67,10 +80,12 @@ export function StatsCards({ stats }: Props) {
   );
 }
 
+/** 梦境类型分布组件（带进度条） */
 export function DreamTypeDistribution({ stats }: Props) {
   const types = stats.dreamTypes;
   if (types.length === 0) return null;
 
+  // 计算总数，用于百分比
   const total = types.reduce((sum, t) => sum + t.count, 0);
 
   return (
@@ -78,6 +93,7 @@ export function DreamTypeDistribution({ stats }: Props) {
       <h3 className="text-sm font-medium text-gray-400 mb-3">梦境类型分布</h3>
       <div className="space-y-2">
         {types.map((t) => {
+          // 计算该类型占比百分比
           const pct = Math.round((t.count / total) * 100);
           const label = DREAM_TYPE_LABELS[t.type as keyof typeof DREAM_TYPE_LABELS] || t.type;
           return (
@@ -86,6 +102,7 @@ export function DreamTypeDistribution({ stats }: Props) {
                 <span className="text-gray-300">{label}</span>
                 <span className="text-gray-500">{t.count} ({pct}%)</span>
               </div>
+              {/* 进度条 */}
               <div className="h-2 bg-night-700 rounded-full overflow-hidden">
                 <div
                   className="h-full bg-gradient-to-r from-dream-purple to-dream-blue rounded-full transition-all duration-500"
@@ -100,9 +117,11 @@ export function DreamTypeDistribution({ stats }: Props) {
   );
 }
 
+/** 高频情绪 TOP5 组件（带进度条和排名） */
 export function TopEmotions({ stats }: Props) {
   if (stats.topEmotions.length === 0) return null;
 
+  // 第一名的计数，用于计算相对宽度
   const max = stats.topEmotions[0].count;
 
   return (
@@ -110,7 +129,9 @@ export function TopEmotions({ stats }: Props) {
       <h3 className="text-sm font-medium text-gray-400 mb-3">高频情绪 TOP5</h3>
       <div className="space-y-2">
         {stats.topEmotions.map((e, i) => {
+          // 计算相对于第一名的百分比
           const pct = Math.round((e.count / max) * 100);
+          // 前5名分别使用不同颜色
           const colors = ['bg-dream-purple', 'bg-dream-blue', 'bg-dream-cyan', 'bg-yellow-500', 'bg-pink-500'];
           return (
             <div key={e.emotion} className="flex items-center gap-3">

@@ -1,133 +1,164 @@
+// Prisma 客户端生成配置：使用 JavaScript 客户端
 generator client {
   provider = "prisma-client-js"
 }
 
+// 数据源配置：使用 PostgreSQL，连接字符串从环境变量 DATABASE_URL 读取
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
+// ============================================================
+// 用户模型 - 系统核心用户实体
+// ============================================================
 model User {
-  id              String         @id @default(cuid())
-  email           String         @unique
-  passwordHash    String?
-  nickname        String?
-  avatar          String?
-  credits         Int            @default(10)
-  plan            String         @default("FREE")
-  lastDailyBonus  DateTime?
-  createdAt       DateTime       @default(now())
-  profile         Profile?
-  subscription    Subscription?
-  orders          Order[]
-  dreams          Dream[]
-  chatSessions    ChatSession[]
-  cards           DreamCard[]
+  id              String         @id @default(cuid())  // 主键，使用 CUID 自动生成
+  email           String         @unique              // 邮箱，唯一索引，用于登录
+  passwordHash    String?                             // 密码哈希（验证码登录用户可能没有密码）
+  nickname        String?                             // 昵称
+  avatar          String?                             // 头像（Base64 编码或 URL）
+  credits         Int            @default(10)        // AI 解构剩余次数，新用户默认 10 次
+  plan            String         @default("FREE")    // 订阅计划：FREE / PRO / PREMIUM / LIFETIME
+  lastDailyBonus  DateTime?                          // 上次领取每日奖励的时间，用于判断是否同一天
+  createdAt       DateTime       @default(now())     // 注册时间
+  profile         Profile?                           // 一对一关联：个人背景档案
+  subscription    Subscription?                      // 一对一关联：订阅信息
+  orders          Order[]                            // 一对多关联：支付订单
+  dreams          Dream[]                            // 一对多关联：梦境记录
+  chatSessions    ChatSession[]                      // 一对多关联：AI 对话会话
+  cards           DreamCard[]                        // 一对多关联：梦境视觉卡片
 }
 
+// ============================================================
+// 个人背景档案 - 用于 AI 解梦时提供个性化上下文
+// ============================================================
 model Profile {
-  id              String   @id @default(cuid())
-  userId          String   @unique
-  ageRange        String?
-  gender          String?
-  occupation      String?
-  stressLevel     Int?
-  concerns        String[]
-  lifeChanges     String[]
-  mbti            String?
-  dreamFrequency  String?
-  lucidDreamExp   Boolean  @default(false)
-  psychKnowledge  String?
-  preferredSchool String?
-  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id              String   @id @default(cuid())       // 主键
+  userId          String   @unique                    // 关联用户 ID，唯一约束确保一对一
+  ageRange        String?                             // 年龄段，如 "25-34"
+  gender          String?                             // 性别
+  occupation      String?                             // 职业领域
+  stressLevel     Int?                                // 压力水平 1-10
+  concerns        String[]                           // 主要困扰标签数组，如 ["工作压力", "人际关系"]
+  lifeChanges     String[]                           // 正在经历的变化标签数组，如 ["换工作", "搬家"]
+  mbti            String?                             // MBTI 人格类型，如 "INFP"
+  dreamFrequency  String?                             // 记梦频率：daily / weekly / monthly / rare
+  lucidDreamExp   Boolean  @default(false)           // 是否有清醒梦经验
+  psychKnowledge  String?                             // 心理学了解程度：none / basic / intermediate / advanced
+  preferredSchool String?                             // 偏好的心理学派：jung / freud / cognitive / integrated / zhougong
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)  // 关联用户，级联删除
 }
 
+// ============================================================
+// 梦境记录 - 用户记录的梦境数据
+// ============================================================
 model Dream {
-  id           String        @id @default(cuid())
-  userId       String
-  title        String?
-  content      String
-  emotions     String[]
-  clarity      String?
-  dreamType    String?
-  scenes       String[]
-  aiSummary    String?
-  anxietyScore Float?
-  recordedAt   DateTime      @default(now())
-  createdAt    DateTime      @default(now())
+  id           String        @id @default(cuid())     // 主键
+  userId       String                              // 关联用户 ID
+  title        String?                             // 梦境标题（用户填写或 AI 生成）
+  content      String                              // 梦境内容描述（必填）
+  emotions     String[]                           // 情绪标签数组，如 ["恐惧", "焦虑"]
+  clarity      String?                             // 清晰度：blurry / normal / clear / vivid
+  dreamType    String?                             // 梦境类型：nightmare / recurring / lucid / normal
+  scenes       String[]                           // 场景标签数组，如 ["水", "追逐"]
+  aiSummary    String?                             // AI 自动生成的一句话摘要
+  anxietyScore Float?                              // AI 评估的焦虑指数 0-10
+  recordedAt   DateTime      @default(now())       // 梦境记录时间
+  createdAt    DateTime      @default(now())       // 数据创建时间
   user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
-  sessions     ChatSession[]
-  cards        DreamCard[]
+  sessions     ChatSession[]                       // 关联的 AI 对话会话
+  cards        DreamCard[]                         // 关联的视觉卡片
 
+  // 复合索引：按用户查询梦境时按记录时间排序，提升列表查询性能
   @@index([userId, recordedAt])
 }
 
+// ============================================================
+// 对话会话 - 用户与 AI 的对话上下文
+// ============================================================
 model ChatSession {
-  id        String    @id @default(cuid())
-  userId    String
-  dreamId   String?
-  school    String
-  title     String?
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
+  id        String    @id @default(cuid())           // 主键
+  userId    String                                // 关联用户 ID
+  dreamId   String?                               // 关联的梦境 ID（可选，直接对话时无关联）
+  school    String                                // 使用的心理学派
+  title     String?                               // 会话标题（取首条消息前 50 字符）
+  createdAt DateTime  @default(now())             // 创建时间
+  updatedAt DateTime  @updatedAt                  // 最后更新时间
   user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  dream     Dream?    @relation(fields: [dreamId], references: [id], onDelete: SetNull)
-  messages  Message[]
+  dream     Dream?    @relation(fields: [dreamId], references: [id], onDelete: SetNull)  // 级联设空：梦境删除时会话保留
+  messages  Message[]                             // 会话中的消息列表
 
+  // 复合索引：按用户查询会话列表时按创建时间排序
   @@index([userId, createdAt])
 }
 
+// ============================================================
+// 对话消息 - 会话中的单条消息
+// ============================================================
 model Message {
-  id        String      @id @default(cuid())
-  sessionId String
-  role      String
-  content   String
-  createdAt DateTime    @default(now())
+  id        String      @id @default(cuid())       // 主键
+  sessionId String                                // 关联会话 ID
+  role      String                                // 消息角色：user / assistant / system
+  content   String                                // 消息内容
+  createdAt DateTime    @default(now())           // 创建时间
   session   ChatSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
 
+  // 复合索引：按会话查询消息时按创建时间排序
   @@index([sessionId, createdAt])
 }
 
+// ============================================================
+// 梦境视觉卡片 - 基于梦境数据生成的精美卡片
+// ============================================================
 model DreamCard {
-  id           String   @id @default(cuid())
-  userId       String
-  dreamId      String
-  style        String   // "mystic", "watercolor", "minimal", "surreal"
-  title        String?
-  symbols      String[]
-  theme        String?
-  quote        String?
-  school       String?
-  emotions     String[]
-  createdAt    DateTime @default(now())
+  id           String   @id @default(cuid())        // 主键
+  userId       String                               // 关联用户 ID
+  dreamId      String                               // 关联梦境 ID
+  style        String                               // 卡片风格：mystic / watercolor / minimal / surreal
+  title        String?                              // 卡片标题
+  symbols      String[]                             // 核心符号数组
+  theme        String?                              // 潜意识主题
+  quote        String?                              // AI 精选语句
+  school       String?                              // 使用的心理学派
+  emotions     String[]                             // 情绪标签
+  createdAt    DateTime @default(now())            // 创建时间
 
   user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   dream        Dream    @relation(fields: [dreamId], references: [id], onDelete: Cascade)
 
+  // 复合索引：按用户查询卡片列表时按创建时间排序
   @@index([userId, createdAt])
 }
 
+// ============================================================
+// 订阅信息 - 用户付费订阅状态
+// ============================================================
 model Subscription {
-  id               String    @id @default(cuid())
-  userId           String    @unique
-  plan             String    // PRO | PREMIUM | LIFETIME
-  status           String    // active | canceled | expired
-  currentPeriodEnd DateTime?
-  createdAt        DateTime  @default(now())
+  id               String    @id @default(cuid())  // 主键
+  userId           String    @unique               // 关联用户 ID，唯一约束确保一对一
+  plan             String                          // 订阅计划：PRO / PREMIUM / LIFETIME
+  status           String                          // 订阅状态：active / canceled / expired
+  currentPeriodEnd DateTime?                       // 当前订阅周期结束时间
+  createdAt        DateTime  @default(now())       // 创建时间
   user             User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
+// ============================================================
+// 支付订单 - 微信支付订单记录
+// ============================================================
 model Order {
-  id           String   @id @default(cuid())
-  userId       String
-  plan         String   // PRO | PREMIUM | LIFETIME
-  amount       Int      // 价格（分）
-  orderId      String   @unique // PayJS 订单号
-  payjsOrderId String?  // PayJS 返回的 orderid
-  status       String   @default("pending") // pending | paid | failed
-  createdAt    DateTime @default(now())
-  paidAt       DateTime?
+  id           String   @id @default(cuid())        // 主键
+  userId       String                               // 关联用户 ID
+  plan         String                               // 购买的订阅计划
+  amount       Int                                  // 订单金额（单位：分）
+  orderId      String   @unique                    // 业务方生成的唯一订单号
+  payjsOrderId String?                              // PayJS 返回的支付平台订单号
+  status       String   @default("pending")        // 订单状态：pending / paid / failed
+  createdAt    DateTime @default(now())            // 创建时间
+  paidAt       DateTime?                           // 支付完成时间
   user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
+  // 复合索引：按用户查询订单列表时按创建时间排序
   @@index([userId, createdAt])
 }

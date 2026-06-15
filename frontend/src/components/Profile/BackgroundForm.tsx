@@ -1,3 +1,8 @@
+/**
+ * @file BackgroundForm.tsx
+ * @description 用户背景档案表单组件，用于收集和完善用户的个人信息、心理状态、
+ *              性格倾向、梦境习惯和偏好设置，以便提供个性化的梦境解读。
+ */
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { useProfileStore } from '../../stores/profileStore';
@@ -16,23 +21,27 @@ import type { PsychologySchool } from '../../types';
 
 export function BackgroundForm() {
   const { profile, saveProfile, isLoading } = useProfileStore();
+  // 是否正在保存中
   const [saving, setSaving] = useState(false);
+  // 是否刚保存成功（用于显示成功提示）
   const [saved, setSaved] = useState(false);
 
+  // 表单数据状态
   const [form, setForm] = useState({
-    ageRange: '',
-    gender: '',
-    occupation: '',
-    stressLevel: 5,
-    concerns: [] as string[],
-    lifeChanges: [] as string[],
-    mbti: '',
-    dreamFrequency: '',
-    lucidDreamExp: false,
-    psychKnowledge: '',
-    preferredSchool: '',
+    ageRange: '',         // 年龄段
+    gender: '',           // 性别
+    occupation: '',       // 职业领域
+    stressLevel: 5,       // 压力水平（1-10）
+    concerns: [] as string[],   // 主要困扰（多选）
+    lifeChanges: [] as string[], // 正在经历的变化（多选）
+    mbti: '',             // MBTI 类型
+    dreamFrequency: '',   // 记梦频率
+    lucidDreamExp: false, // 是否有过清醒梦经验
+    psychKnowledge: '',   // 心理学了解程度
+    preferredSchool: '',  // 偏好的心理学派
   });
 
+  // 当 profile 加载完成后，用已有数据填充表单
   useEffect(() => {
     if (profile) {
       setForm({
@@ -51,6 +60,7 @@ export function BackgroundForm() {
     }
   }, [profile]);
 
+  /** 切换多选字段（concerns / lifeChanges）中的选项 */
   const toggleArrayItem = (field: 'concerns' | 'lifeChanges', value: string) => {
     setForm((prev) => ({
       ...prev,
@@ -60,6 +70,7 @@ export function BackgroundForm() {
     }));
   };
 
+  /** 表单提交处理：保存用户档案，成功后显示3秒提示 */
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setSaving(true);
@@ -86,10 +97,11 @@ export function BackgroundForm() {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-8">
-      {/* Basic Info */}
+      {/* 基本信息区块 */}
       <section className="bg-night-800/50 rounded-2xl p-6 border border-night-700/50">
         <h3 className="text-lg font-semibold text-white mb-4">基本信息</h3>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          {/* 年龄段选择 */}
           <div>
             <label className="block text-sm text-gray-400 mb-1">年龄段</label>
             <select
@@ -103,6 +115,7 @@ export function BackgroundForm() {
               ))}
             </select>
           </div>
+          {/* 性别选择 */}
           <div>
             <label className="block text-sm text-gray-400 mb-1">性别</label>
             <select
@@ -116,6 +129,7 @@ export function BackgroundForm() {
               ))}
             </select>
           </div>
+          {/* 职业领域输入 */}
           <div className="sm:col-span-2">
             <label className="block text-sm text-gray-400 mb-1">职业领域</label>
             <input
@@ -129,10 +143,11 @@ export function BackgroundForm() {
         </div>
       </section>
 
-      {/* Mental State */}
+      {/* 心理状态区块 */}
       <section className="bg-night-800/50 rounded-2xl p-6 border border-night-700/50">
         <h3 className="text-lg font-semibold text-white mb-4">心理状态</h3>
         <div className="space-y-4">
+          {/* 压力水平滑块 */}
           <div>
             <label className="block text-sm text-gray-400 mb-2">
               压力水平：<span className="text-dream-purple font-medium">{form.stressLevel}/10</span>
@@ -150,6 +165,7 @@ export function BackgroundForm() {
               <span>压力很大</span>
             </div>
           </div>
+          {/* 主要困扰多选 */}
           <div>
             <label className="block text-sm text-gray-400 mb-2">主要困扰（可多选）</label>
             <div className="flex flex-wrap gap-2">
@@ -169,6 +185,7 @@ export function BackgroundForm() {
               ))}
             </div>
           </div>
+          {/* 正在经历的变化多选 */}
           <div>
             <label className="block text-sm text-gray-400 mb-2">正在经历的变化（可多选）</label>
             <div className="flex flex-wrap gap-2">
@@ -191,10 +208,11 @@ export function BackgroundForm() {
         </div>
       </section>
 
-      {/* Personality */}
+      {/* 性格倾向区块 */}
       <section className="bg-night-800/50 rounded-2xl p-6 border border-night-700/50">
         <h3 className="text-lg font-semibold text-white mb-4">性格倾向</h3>
         <div>
+          {/* MBTI 类型选择 */}
           <label className="block text-sm text-gray-400 mb-1">MBTI 类型（可选）</label>
           <select
             value={form.mbti}
@@ -209,11 +227,12 @@ export function BackgroundForm() {
         </div>
       </section>
 
-      {/* Dream Habits */}
+      {/* 梦境习惯区块 */}
       <section className="bg-night-800/50 rounded-2xl p-6 border border-night-700/50">
         <h3 className="text-lg font-semibold text-white mb-4">梦境习惯</h3>
         <div className="space-y-4">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            {/* 记梦频率选择 */}
             <div>
               <label className="block text-sm text-gray-400 mb-1">记梦频率</label>
               <select
@@ -227,6 +246,7 @@ export function BackgroundForm() {
                 ))}
               </select>
             </div>
+            {/* 心理学了解程度选择 */}
             <div>
               <label className="block text-sm text-gray-400 mb-1">心理学了解程度</label>
               <select
@@ -241,6 +261,7 @@ export function BackgroundForm() {
               </select>
             </div>
           </div>
+          {/* 清醒梦经验勾选 */}
           <label className="flex items-center gap-3 cursor-pointer">
             <input
               type="checkbox"
@@ -253,10 +274,11 @@ export function BackgroundForm() {
         </div>
       </section>
 
-      {/* Preferences */}
+      {/* 偏好设置区块 */}
       <section className="bg-night-800/50 rounded-2xl p-6 border border-night-700/50">
         <h3 className="text-lg font-semibold text-white mb-4">偏好设置</h3>
         <div>
+          {/* 偏好的心理学派选择 */}
           <label className="block text-sm text-gray-400 mb-1">偏好的心理学派</label>
           <select
             value={form.preferredSchool}
@@ -271,7 +293,7 @@ export function BackgroundForm() {
         </div>
       </section>
 
-      {/* Submit */}
+      {/* 提交按钮和成功提示 */}
       <div className="flex items-center gap-4">
         <motion.button
           type="submit"
@@ -282,6 +304,7 @@ export function BackgroundForm() {
         >
           {saving ? '保存中...' : '保存档案'}
         </motion.button>
+        {/* 保存成功提示（3秒后消失） */}
         {saved && (
           <motion.span
             initial={{ opacity: 0, x: -10 }}

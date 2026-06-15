@@ -1,3 +1,15 @@
+/**
+ * 数据洞察页（Insights）
+ *
+ * 页面职责：以可视化图表和统计数据展示用户的梦境模式与情绪趋势。
+ * 功能概述：
+ *   - 统计概览卡片（梦境总数、本月记录、AI 分析次数等）
+ *   - 潜意识焦虑曲线（折线图，支持 7/30/90 天时间范围切换）
+ *   - 情绪标签词云和场景标签词云
+ *   - 高频情绪排行和梦境类型分布
+ *   - 支持为已有梦境补算焦虑指数
+ *   - 焦虑曲线说明弹窗（点击 i 图标触发）
+ */
 import { useEffect, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
 import { Card } from '../components/UI/Card';
@@ -10,6 +22,7 @@ import {
   type AnxietyCurveResponse, type ThemeCloudResponse, type InsightStats,
 } from '../services/insights';
 
+/** 时间范围选项配置 */
 const DAYS_OPTIONS = [
   { value: 7, label: '7天' },
   { value: 30, label: '30天' },
@@ -17,15 +30,24 @@ const DAYS_OPTIONS = [
 ];
 
 export function Insights() {
+  /** 当前选择的时间范围（天数） */
   const [days, setDays] = useState(30);
+  /** 统计概览数据 */
   const [stats, setStats] = useState<InsightStats | null>(null);
+  /** 焦虑曲线数据 */
   const [anxiety, setAnxiety] = useState<AnxietyCurveResponse | null>(null);
+  /** 主题词云数据 */
   const [themes, setThemes] = useState<ThemeCloudResponse | null>(null);
+  /** 页面加载状态 */
   const [loading, setLoading] = useState(true);
+  /** 焦虑曲线说明弹窗显示状态 */
   const [showInfo, setShowInfo] = useState(false);
+  /** 焦虑指数补算加载状态 */
   const [backfilling, setBackfilling] = useState(false);
+  /** 说明弹窗的 ref，用于检测点击外部关闭 */
   const infoRef = useRef<HTMLDivElement>(null);
 
+  /* 点击说明弹窗外部时关闭弹窗 */
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
       if (infoRef.current && !infoRef.current.contains(e.target as Node)) {
@@ -38,14 +60,19 @@ export function Insights() {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [showInfo]);
 
+  /* 页面初始化时加载全部数据 */
   useEffect(() => {
     loadData();
   }, []);
 
+  /* 时间范围变化时重新加载时间相关数据 */
   useEffect(() => {
     loadTimeData();
   }, [days]);
 
+  /**
+   * 加载所有洞察数据（统计、焦虑曲线、主题词云）
+   */
   async function loadData() {
     try {
       const [s, a, t] = await Promise.all([
@@ -63,6 +90,9 @@ export function Insights() {
     }
   }
 
+  /**
+   * 仅加载时间相关数据（焦虑曲线和主题词云），用于时间范围切换
+   */
   async function loadTimeData() {
     try {
       const [a, t] = await Promise.all([
@@ -76,6 +106,10 @@ export function Insights() {
     }
   }
 
+  /**
+   * 为已有梦境记录补算焦虑指数
+   * 补算完成后刷新焦虑曲线数据
+   */
   async function handleBackfill() {
     setBackfilling(true);
     try {
@@ -89,6 +123,7 @@ export function Insights() {
     }
   }
 
+  /* 加载中状态展示 */
   if (loading) {
     return (
       <div className="flex items-center justify-center h-full">
@@ -100,11 +135,13 @@ export function Insights() {
   return (
     <div className="p-4 lg:p-6 max-w-5xl mx-auto space-y-6">
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
+        {/* 页面标题和时间范围切换器 */}
         <div className="flex items-center justify-between mb-6">
           <div>
             <h1 className="text-2xl font-bold text-white mb-1">数据洞察</h1>
             <p className="text-sm text-gray-400">探索你的梦境模式与情绪趋势</p>
           </div>
+          {/* 时间范围切换按钮组 */}
           <div className="flex items-center gap-1 bg-night-800 rounded-lg p-1">
             {DAYS_OPTIONS.map((opt) => (
               <button
@@ -122,13 +159,14 @@ export function Insights() {
           </div>
         </div>
 
-        {/* Stats cards */}
+        {/* 统计概览卡片 */}
         {stats && <StatsCards stats={stats} />}
 
-        {/* Anxiety curve */}
+        {/* 潜意识焦虑曲线卡片 */}
         <Card className="mt-6">
           <div className="relative flex items-center gap-2 mb-4" ref={infoRef}>
             <h2 className="text-lg font-semibold text-white">潜意识焦虑曲线</h2>
+            {/* 信息说明按钮 */}
             <button
               onClick={() => setShowInfo((v) => !v)}
               className="relative group"
@@ -139,6 +177,7 @@ export function Insights() {
                 <text x="9" y="13" textAnchor="middle" fill="currentColor" fontSize="11" fontWeight="600">i</text>
               </svg>
             </button>
+            {/* 焦虑曲线说明弹窗 */}
             {showInfo && (
               <motion.div
                 initial={{ opacity: 0, scale: 0.95, y: -4 }}
@@ -170,7 +209,9 @@ export function Insights() {
               </motion.div>
             )}
           </div>
+          {/* 焦虑折线图 */}
           <AnxietyCurve dataPoints={anxiety?.dataPoints || []} days={days} />
+          {/* 无焦虑数据但有梦境时，提供补算按钮 */}
           {(!anxiety?.dataPoints || anxiety.dataPoints.length === 0) && stats && stats.totalDreams > 0 && (
             <div className="mt-4 text-center">
               <Button
@@ -186,7 +227,7 @@ export function Insights() {
           )}
         </Card>
 
-        {/* Theme cloud & breakdown */}
+        {/* 情绪标签词云 + 场景标签词云（双列布局） */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mt-4">
           <Card>
             <ThemeCloud title="情绪标签" items={themes?.emotions || []} />
@@ -196,7 +237,7 @@ export function Insights() {
           </Card>
         </div>
 
-        {/* More stats */}
+        {/* 高频情绪排行 + 梦境类型分布（双列布局） */}
         {stats && (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mt-4">
             <Card>

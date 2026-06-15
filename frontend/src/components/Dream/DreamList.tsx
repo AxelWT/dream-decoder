@@ -1,3 +1,8 @@
+/**
+ * @file DreamList.tsx
+ * @description 梦境列表组件，按日期分组展示梦境记录，支持点击跳转详情、删除操作。
+ *              空列表时显示引导提示。
+ */
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Card } from '../UI/Card';
@@ -5,14 +10,18 @@ import { Tag } from '../UI/Tag';
 import type { Dream } from '../../types';
 import { CLARITY_LABELS, DREAM_TYPE_LABELS } from '../../types';
 
+/** 梦境列表组件的 Props 定义 */
 interface DreamListProps {
+  /** 需要展示的梦境数组 */
   dreams: Dream[];
+  /** 删除梦境的回调（可选，不传则不显示删除按钮） */
   onDelete?: (id: string) => void;
 }
 
 export function DreamList({ dreams, onDelete }: DreamListProps) {
   const navigate = useNavigate();
 
+  // 空列表引导提示
   if (dreams.length === 0) {
     return (
       <Card className="text-center py-16">
@@ -27,7 +36,7 @@ export function DreamList({ dreams, onDelete }: DreamListProps) {
     );
   }
 
-  // Group dreams by date
+  // 按记录日期分组梦境
   const grouped = dreams.reduce((acc, dream) => {
     const date = new Date(dream.recordedAt).toLocaleDateString('zh-CN', {
       year: 'numeric',
@@ -43,6 +52,7 @@ export function DreamList({ dreams, onDelete }: DreamListProps) {
     <div className="space-y-8">
       {Object.entries(grouped).map(([date, dateDreams]) => (
         <div key={date}>
+          {/* 日期分隔标题 */}
           <h3 className="text-sm font-medium text-gray-500 mb-3 flex items-center gap-2">
             <div className="w-2 h-2 rounded-full bg-dream-purple/50" />
             {date}
@@ -55,6 +65,7 @@ export function DreamList({ dreams, onDelete }: DreamListProps) {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: index * 0.05 }}
               >
+                {/* 单条梦境卡片，点击跳转详情 */}
                 <Card
                   hoverable
                   onClick={() => navigate(`/dream/${dream.id}`)}
@@ -65,9 +76,11 @@ export function DreamList({ dreams, onDelete }: DreamListProps) {
                       <h4 className="font-medium text-white truncate mb-1">
                         {dream.title || '无标题梦境'}
                       </h4>
+                      {/* 梦境内容预览，最多显示2行 */}
                       <p className="text-sm text-gray-400 line-clamp-2 mb-3">
                         {dream.content}
                       </p>
+                      {/* 标签展示，情绪最多4个 */}
                       <div className="flex flex-wrap gap-1.5">
                         {dream.emotions.slice(0, 4).map((emotion) => (
                           <Tag key={emotion} label={emotion} variant="emotion" />
@@ -81,21 +94,24 @@ export function DreamList({ dreams, onDelete }: DreamListProps) {
                       </div>
                     </div>
                     <div className="flex flex-col items-end gap-2">
+                      {/* 记录时间 */}
                       <span className="text-xs text-gray-500">
                         {new Date(dream.recordedAt).toLocaleTimeString('zh-CN', {
                           hour: '2-digit',
                           minute: '2-digit',
                         })}
                       </span>
+                      {/* 已有 AI 解构的标记 */}
                       {dream.sessions && dream.sessions.length > 0 && (
                         <span className="text-xs text-dream-cyan bg-dream-cyan/10 px-2 py-0.5 rounded-md">
                           已解构
                         </span>
                       )}
+                      {/* 删除按钮（hover 时显示） */}
                       {onDelete && (
                         <button
                           onClick={(e) => {
-                            e.stopPropagation();
+                            e.stopPropagation(); // 阻止冒泡，避免触发卡片点击
                             onDelete(dream.id);
                           }}
                           className="opacity-0 group-hover:opacity-100 text-gray-500 hover:text-red-400 transition-all p-1"
