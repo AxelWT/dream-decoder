@@ -72,6 +72,7 @@ jobs:
             SMTP_USER=${{ secrets.SMTP_USER }}
             SMTP_PASS=${{ secrets.SMTP_PASS }}
             SMTP_FROM=${{ secrets.SMTP_FROM }}
+            ENABLE_EMAIL=${{ secrets.ENABLE_EMAIL }}
             PAYJS_KEY=${{ secrets.PAYJS_KEY }}
             PAYJS_MCHID=${{ secrets.PAYJS_MCHID }}
             FRONTEND_URL=${{ secrets.FRONTEND_URL }}
